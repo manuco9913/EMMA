@@ -1,12 +1,12 @@
 # EMMA - ElectroMagnetic Mission Analysis
 
-Is a version of a full-stack application for building **calculation scenarios on a map**, sending them to a backend pipeline, and receiving calculated results.
+Is a version of a full-stack application for building heatmaps on top of a map, based on a calculation done in a different server.
 
 This project is developed using **AI-assisted engineering (Cursor)** with human architectural oversight.
 
 ---
 
-## 📚 Table of Contents
+## Table of Contents
 
 - [Repository Structure](#repository-structure)
 - [Tech Stack](#tech-stack)
@@ -20,7 +20,7 @@ This project is developed using **AI-assisted engineering (Cursor)** with human 
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ---
 ```
@@ -34,7 +34,7 @@ repo
 ```
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
 ### Frontend
 - React
@@ -141,7 +141,7 @@ Example:
 
 ---
 
-## 🔄 Development Workflow
+## Development Workflow
 
 1. Create GitHub Issue using the AI task specification template  
 2. Run AI agent in **Plan Mode**  
@@ -188,7 +188,7 @@ Example:
 
 ---
 
-## 💻 Local Development
+## Local Development
 
 ### Backend
 
@@ -219,7 +219,7 @@ docker compose up -d
 
 ---
 
-## 🧹 Linting & Code Quality
+## Linting & Code Quality
 
 ### Frontend
 
@@ -255,8 +255,3 @@ Before submitting code:
 - All changes go through Pull Requests
 - At least **one reviewer required**
 ```
-
----
-
-If you want, I can also give you the **`agents.md` file that top AI-coding repos use**, which will make **Cursor behave much more reliably with your project.**
-
