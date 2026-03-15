@@ -78,6 +78,7 @@ The system consists of the following components:
 - **PostgreSQL Database**  
   Used for storing scenario definitions, metadata, and application data.
 
+```
 User
  │
  ▼
@@ -105,7 +106,7 @@ Height Slice Extraction
  │
  ▼
 Heatmap Visualization
-
+```
 ## System Flow
 
 The system follows a scenario-based simulation workflow.
