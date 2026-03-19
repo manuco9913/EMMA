@@ -43,14 +43,24 @@ A **scenario** has:
 - **2–10 entities** (wave sources), each configured with:
   - Geographic position (lat/lon, placed on map)
   - Frequency, Power/amplitude, Beam direction/azimuth, Antenna height
-- **One shared circular AOI** (center + radius in km)
-  - Entities may sit **outside** the AOI — their propagation still contributes if it enters the AOI
+- **Per-entity radius** (km): each entity has its own circle, drawn on the map by dragging a circle handle. No shared AOI.
+  - Combined output area = **bounding box** of all entity circles
+    - West: min(entity_lon − radius), East: max(entity_lon + radius), North/South: same
+  - Cells outside a given entity's circle = null (no contribution from that entity)
+  - Combination (max by default) is applied cell-by-cell across all entity grids per height level
+- **Beam direction/azimuth**: property passed through to MATLAB. Backend always generates full 360° ray list; MATLAB applies antenna gain pattern internally.
 - Height simulation parameters: min height, max height, step size (user-configurable)
-- **Angular resolution**: fixed angle between rays (degrees/vector), default determined by research
-  - System computes vector count at runtime: `num_vectors = angular_window / step_angle`
+- **Angular resolution**: fixed angle between rays (degrees/vector), default **0.1°**
+  - Vector count = `angular_window / step_angle` — no cap
+  - At 0.1° step, full 360° = 3,600 vectors
   - User can adjust step angle to trade accuracy for speed
-  - Research will determine the sensible default (likely 0.1°–0.5°)
-  - Arc gap at AOI edge = `AOI_radius_m × step_angle_radians` (e.g. 0.1° at 50km = ~87m gap)
+  - Arc gap at 200km: 0.1° → 349m, 0.05° → 175m
+- **Output Cartesian grid cell size**: default **100m × 100m**, user-overridable
+  - Independent from angular step (angular step controls ray count in polar domain; cell size controls rasterization resolution in Cartesian output domain)
+  - At 100m cells, 200km radius bounding box ≈ 4,000 × 4,000 = 16M cells per height level per entity
+- **Include terrain data** toggle (default: on)
+  - When off: terrain profile is flat (all elevations = 0), no DEM queries — same ray list and MATLAB invocation, trivial terrain data
+  - Use cases: sea-level scenarios, quick feasibility checks, parameter sweeps
 - **Combination method** for multi-entity results: max (default), sum, or other (user-selectable)
 
 ### Run / Save Model
@@ -68,14 +78,13 @@ MATLAB is invoked.
 
 ### Step 1: Angular Coverage Calculation
 For each entity:
-1. Compute the angular window from the entity toward the AOI circle
-   - If entity is **inside** AOI: full 360° (or user-limited beam)
-   - If entity is **outside** AOI: compute tangent angles → angular window that covers the AOI
-2. Divide angular window by resolution → list of up to 1000 azimuths (vectors)
+1. Generate full 360° ray list (or user-limited beam sector if applicable)
+2. Divide angular window by resolution → list of azimuths, count = `angular_window / step_angle`
+   - E.g., 0.1° step, full 360° → 3,600 azimuths
 
 ### Step 2: Terrain Profile per Vector
 For each azimuth:
-1. March outward from entity in 100m steps up to AOI radius
+1. March outward from entity in 100m steps up to entity's radius
 2. Convert (entity position, azimuth, distance) → (lat, lon) using geodesic math
 3. Query terrain elevation at each (lat, lon) → `height_above_sea_level`
 4. Build vector as ordered list of `{ distance_m, lat, lon, terrain_height_m }`
@@ -86,10 +95,11 @@ For each azimuth:
 - Format (JSON / binary / HDF5 input file) → **research needed, part of MCR integration study**
 
 ### Scale
-- 1000 vectors × (AOI_radius_m / 100) distance steps per entity
-- E.g., 50 km radius → 500 steps/vector → 500,000 terrain queries per entity
-- With 10 entities → 5,000,000 terrain elevation queries per scenario
+- Vector count = `angular_window / step_angle` — no cap
+- At 0.1° step, full 360° = 3,600 vectors; at 200km radius = 2,000 distance steps/vector → **7.2M terrain queries per entity**
+- With 10 entities → 72M terrain elevation queries per scenario
 - Must be fast: vectorized raster sampling preferred over point-by-point API calls
+- 200km is a typical scenario scale, not a hard maximum
 
 ---
 
@@ -102,8 +112,11 @@ User submits scenario
 → SSE channel opened — client listens for job events
 → Single MATLAB worker picks up job (uses all CPU cores — single queue)
 → MATLAB MCR runs (1–30 min)
-→ Outputs 3D matrix [Height × Distance × Angle], 8–40 GB
-→ Matrix stored (HDF5 or Zarr); metadata saved to PostgreSQL
+  → Each core handles a subset of computation; when finished saves partial result to disk immediately, then picks up next work unit (prevents RAM flooding, preserves partial results on crash)
+→ Outputs per-entity 3D matrix [Height × Distance × Angle], stored as separate per-entity Zarr/HDF5 files; metadata saved to PostgreSQL
+→ Combined output is NOT stored — computed on-the-fly when serving height slices to frontend:
+  read per-entity slice → rasterize to common Cartesian grid → element-wise max → return
+  (allows changing combination method without re-running MATLAB)
 → Backend pushes "done" via SSE
 → User views result — height slider loads slices (~200 MB each, delays OK)
 → User prompted to save or discard (if unsaved, old run deleted with confirmation)
@@ -167,9 +180,26 @@ raster terrain sampling at millions of points).
 
 ### 7. Angular Resolution Default Value
 **Goal**: Find the angular step that gives acceptable terrain accuracy for typical scenarios (regional scale, 50–500 km²) without making computation prohibitively slow.
-- Test arc gap at candidate step values (0.05°, 0.1°, 0.2°, 0.5°) against typical AOI radii
+
+**Arc gap at 200km** (typical scenario scale):
+
+| Step angle | Arc gap at 200km |
+|---|---|
+| 0.05° | 175m |
+| 0.1° | 349m |
+| 0.2° | 698m |
+| 0.5° | 1,745m |
+
+**Lower bound — Fresnel zone radius** (frequency-dependent): at 1GHz over 200km ≈ 173m. Going finer than the Fresnel zone gives no additional accuracy.
+
+**Upper bound — DEM resolution**: SRTM 30m, Copernicus 10m — no point going finer than the DEM in the angular domain.
+
+**Recommended default: 0.1°** (349m arc gap at 200km edge — acceptable for most use cases)
+- Finer step needed for microwave links at long range
+- Coarser step acceptable for HF / broadcast scenarios
+- User can always override
+
 - Consider terrain frequency (mountains change faster than flat land — worst case matters)
-- Cross-reference with SRTM/Copernicus DEM resolution (30m/10m) — no point going finer than the DEM
 
 ### 8. Heatmap Slice Delivery to Frontend
 - **Options**: Raw binary HTTP response, server-side XYZ tile generation, progressive streaming
@@ -200,8 +230,8 @@ Each section: options evaluated → recommendation → rationale → open questi
 
 ### Phase 1 — End-to-End Thin Slice
 - Chosen frontend framework with map
-- Entity placement + circular AOI drawing on map
-- Scenario form (name, entities, signal params, height config, angular resolution)
+- Entity placement + per-entity radius circle drawing on map
+- Scenario form (name, entities, signal params, height config, angular resolution, no-terrain toggle)
 - ASP.NET / FastAPI backend receives scenario, runs **stub preprocessing** (no real terrain), queues job
 - **Dummy MATLAB** — returns a synthetic 3D matrix (random values)
 - Matrix stored, metadata in PostgreSQL
