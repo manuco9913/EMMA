@@ -384,33 +384,45 @@ None of these conditions apply to the current system as described.
 
 ---
 
-## Open Questions
+## Answered Questions
 
-1. **Is the MATLAB code owned?** If yes: add `h5create` with `ChunkSize` and
-   `Deflate`. If no: plan mandatory `h5repack` post-processing.
+| # | Question | Answer |
+|---|---|---|
+| 1 | Is the MATLAB code owned? | **Wrapper is owned** — the ray-calculation core is not owned, but the parallel orchestration wrapper (which calls cores and collects results) is. The wrapper writes HDF5 directly with correct chunking. No `h5repack` needed. |
+| 2 | Exact HDF5 dataset path in MATLAB output? | **Defined by us** in the wrapper — use `/propagation`. Attributes: `entity_id`, `scenario_id`, `height_min_m`, `height_max_m`, `height_step_m`. |
+| 3 | What dtype does MATLAB output? | **float32 / single** — confirmed. Halves file size vs float64. |
+| 4 | Per-entity or per-scenario output? | **Per entity** — confirmed. Wrapper writes one HDF5 file per entity. |
+| 5 | Height dimension size? | **Typically 3,000 slices** (0–3,000 m at 1 m step). Max scenario: 0–10,000 m (10,000 slices). Variable resolution at higher altitudes under consideration (to decide separately — HDF5 supports non-uniform axis via a coordinate dataset). |
+| 6 | SWMR needed? | **No** — each core writes to its own temp partial HDF5 file; wrapper assembles them sequentially into the final per-entity file as cores finish. No concurrent writes to one file. |
+| 7 | PureHDF compatibility with MATLAB HDF5? | **Reduced risk** — wrapper writes HDF5 directly (not via MATLAB's `save`), so non-standard MATLAB metadata is not added. Still: include a Phase 1 PoC to validate PureHDF reads the wrapper-written file correctly. |
+| 8 | Disk capacity planning? | **Updated estimate**: at 3,000 slices × float32 × 2,000 distance × 3,600 angles ≈ **86 GB per entity**. 10 entities = ~860 GB per scenario run. Multiple saved runs → multi-TB. Dedicate a large NVMe volume. |
 
-2. **What is the exact HDF5 dataset path in the MATLAB output?** If using
-   `save('-v7.3')`, the dataset name is the MATLAB variable name. The backend
-   reader must know this path — it cannot be auto-discovered safely.
+---
 
-3. **What dtype does MATLAB output?** `double` (float64) vs `single`
-   (float32). Float32 halves the file size. If MATLAB outputs float64,
-   consider converting to float32 before storage.
+## Wrapper HDF5 Write Pattern
 
-4. **Does MATLAB write one 3D array per entity, or a combined array per
-   scenario?** The plan models per-entity separate files — confirm this matches
-   MATLAB's actual output.
+Since the wrapper is owned, it controls HDF5 writes directly. The pattern:
 
-5. **What is the Height dimension size?** At 1 m step from 0–500 m: 500 slices.
-   At 10 m step: 50 slices. Affects `h5repack` time and total file size.
+1. **Each core** computes its assigned rays (subset of angles) → writes result to a temp partial file: `entity_{id}_core_{n}.h5`
+2. **Wrapper** monitors completion → as each core finishes, reads its partial file and writes the data into the final per-entity file using HDF5 hyperslab writes at the correct angle positions
+3. **Final file** is created upfront by the wrapper via `h5create` with `ChunkSize = [1, D, A]` and `Deflate = 4` before any core starts
 
-6. **Is SWMR needed?** Only if the frontend must display partial results while
-   MATLAB is still writing. Not required by the current design.
+This avoids concurrent writes, achieves incremental flushing (frees RAM per core), and ensures correct chunk layout from the start.
 
-7. **PureHDF compatibility with MATLAB-generated HDF5**: MATLAB adds
-   non-standard metadata to its HDF5 files. Run a proof-of-concept before
-   committing to PureHDF in production.
+---
 
-8. **Disk capacity planning**: at 40 GB per entity, 10 entities per scenario,
-   multiple saved runs — storage can reach terabytes quickly. Confirm the
-   volume mount targets a sufficiently large disk.
+## Final Decision
+
+| Property | Decision |
+|---|---|
+| **Format** | HDF5 |
+| **Written by** | MATLAB parallel wrapper (owned) — not by MATLAB's native `save` |
+| **Chunking** | `ChunkSize = [1, D, A]` — set at file creation in the wrapper via `h5create`. No `h5repack` needed. |
+| **Compression** | gzip / Deflate level 4 — applied at chunk write time |
+| **Dataset path** | `/propagation` (defined by the wrapper). Root attributes: `entity_id`, `scenario_id`, `height_min_m`, `height_max_m`, `height_step_m` |
+| **dtype** | float32 (single precision) |
+| **Typical file size** | ~86 GB per entity (3,000 height slices × 2,000 distance steps × 3,600 angles × 4 bytes) |
+| **Write pattern** | Wrapper pre-creates file → cores write temp partial files → wrapper assembles sequentially into final file via hyperslab writes |
+| **C# library** | PureHDF — Phase 1 PoC required to validate reads |
+| **Storage infrastructure** | Dedicated NVMe volume; budget ~860 GB per active scenario run, multi-TB for saved runs |
+| **Height resolution** | Variable resolution (non-uniform axis) is under consideration — if adopted, add a `/height_coords` float32 dataset alongside `/propagation` |
