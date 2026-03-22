@@ -103,7 +103,9 @@ A custom Deck.gl layer can upload the raw `Float32Array` directly to the GPU as 
 - Keeps the full float precision on the GPU (useful if color ramp parameters need to change without re-fetching)
 - Requires authoring a custom Deck.gl layer class with WebGL2 texture management
 
-For Phase 1, BitmapLayer is sufficient and delivers the feature immediately. Phase 2 is a performance optimization worth pursuing if the CPU color-mapping step becomes the bottleneck.
+~~For Phase 1, BitmapLayer is sufficient and delivers the feature immediately. Phase 2 is a performance optimization worth pursuing if the CPU color-mapping step becomes the bottleneck.~~
+
+**Revised:** User-adjustable color breakpoints require the custom R32F layer from day one (see Resolved Decisions §3). BitmapLayer is not suitable for this project.
 
 ---
 
@@ -251,8 +253,7 @@ Validation runs on submit (or per-field on blur for UX). The Zod schema doubles 
 | React map wrapper | react-map-gl | 7.x (MapLibre mode) |
 | Tile format | PMTiles | via `pmtiles` JS plugin |
 | Data visualization | Deck.gl | 9.x |
-| Heatmap (Phase 1) | Deck.gl BitmapLayer | — |
-| Heatmap (Phase 2) | Custom Deck.gl layer (R32F + GLSL) | — |
+| Heatmap | Custom Deck.gl layer (R32F + GLSL) | — |
 | Form management | react-hook-form | 7.x |
 | Validation | Zod | 3.x |
 | State management | Zustand | 5.x |
@@ -263,20 +264,56 @@ Validation runs on submit (or per-field on blur for UX). The Zod schema doubles 
 
 ---
 
-## Open Questions
+## Resolved Decisions
 
-1. **Exact heatmap data format** — Is the 200 MB slice a raw `Float32Array` (4 bytes/value), a compressed format (e.g., gzip, Zstd), or a structured binary with a header? This affects the Web Worker decode step. If compressed, a WASM-based decompressor (e.g., `fflate`) in the worker would be needed.
+### 1. Heatmap slice wire format
 
-2. **Grid dimensions** — What are the actual width × height pixel dimensions of the float grid per height level? This determines VRAM requirements, color-mapping time, and whether Phase 2 GPU path is necessary from day one.
+**Decision: small binary header + raw `Float32Array` body, HTTP gzip at the transport layer.**
 
-3. **Color ramp specification** — Is the color ramp fixed (e.g., viridis, dBm-to-color mapping) or user-configurable? User-configurable ramps favor the Phase 2 GPU approach (no re-processing on ramp change).
+Response layout:
+- ~56-byte header: magic (4), version (4), width (4), height (4), float32 min_val (4), float32 max_val (4), float64 west/south/east/north (32)
+- Remainder: raw `Float32Array` (width × height × 4 bytes)
 
-4. **Number of height levels** — How many levels does a single simulation produce? If the user is expected to scrub through dozens of levels, prefetching adjacent levels in the background (and caching decoded `ImageBitmap` objects) would smooth the scrubbing experience.
+Rationale:
+- Self-contained — one request gives the worker everything it needs (dimensions, data range, bounding box)
+- Backend computes min/max during the on-the-fly entity combination pass at zero extra cost
+- HTTP gzip is transparent (middleware on server, auto-decompressed by `fetch`); wave propagation fields have spatial correlation and compress roughly 30–50%
+- Worker parses header with `DataView`, then creates a `Float32Array` view on the remainder — no copy, no application-level decompressor needed
 
-5. **Target browser** — Is the deployment browser locked to a specific Chromium version (e.g., Electron shell or a pinned browser)? This affects how confidently WebGL2 and `R32F` texture support can be assumed, and whether Vite's build targets need adjustment.
+### 2. Grid dimensions
 
-6. **Heatmap georeferencing** — Does each slice carry its own bounding box metadata, or is the bounding box fixed per scenario? This determines how the `BitmapLayer` `bounds` prop is populated.
+Default 100m cell size over a 200km radius bounding box yields a ~4000×4000 grid (16M cells per height level). This is the baseline for VRAM and processing time estimates throughout this document. Cell size is user-configurable so actual dimensions vary.
 
-7. **Entity circle interaction** — Are the draggable radius handles implemented as MapLibre native features (GeoJSON circle layer + drag event), as Deck.gl layers, or as DOM overlays? The choice affects how dragging updates propagate back to the form state.
+### 3. Color ramp
 
-8. **Persistence of scenarios** — Should saved scenarios survive a browser refresh? If so, Zustand's `persist` middleware with localStorage is sufficient for small scenario JSON objects. If the backend owns scenario storage, the form state is ephemeral and only submitted on "Run Simulation."
+**Fixed palette, user-adjustable breakpoints.** Users set threshold values that divide the palette into segments; they do not choose colors. The palette itself is decided once at design time.
+
+This mandates the **Phase 2 GPU path from day one.** Uploading float data as an `R32F` texture means updating breakpoints only requires changing shader uniforms — no re-processing, no re-upload. CPU color-mapping (Phase 1) would require re-running the worker on every breakpoint drag, which is unacceptable.
+
+### 4. Height levels
+
+Level count is user-configured (min/max/step) and can reach into the thousands for defense/military scenarios. Implications:
+
+- **Prefetching**: maintain a ring-buffer cache of ~5–10 adjacent decoded GPU textures; fetch the next level in the background while the user views the current one
+- **Height slider UX**: expose both a slider and a direct numeric input so users can jump to a specific height rather than scrubbing every level
+- **GPU path importance**: with thousands of levels and user-adjustable breakpoints, the `R32F` texture approach means breakpoint changes never require re-fetching — only uniform updates
+
+### 5. Target browser
+
+No locked browser or Electron shell. Assume a modern Chromium or Firefox installation on the deployment machine. WebGL2, `R32F` textures, and `OES_texture_float_linear` are safe to require. Vite build target: `es2020` / `chrome90+`.
+
+### 6. Heatmap georeferencing
+
+The bounding box is per-scenario (derived from entity positions + radii at submission time) and is **the same for every height level within a run**. The backend includes it in each slice's binary header for simplicity; the frontend does not need to track it separately.
+
+### 7. Entity circle drag handles
+
+**MapLibre Marker for the drag handle + MapLibre GeoJSON `fill` layer for the radius ring.**
+
+- `Marker` is a DOM element that MapLibre positions and projects. Drag = standard DOM `mousedown`/`mousemove`/`mouseup`; MapLibre provides `map.unproject(point)` to convert pixel coordinates to lat/lon. Dragging the handle recomputes the radius from the distance between entity center and handle position and updates the react-hook-form field value.
+- The radius ring is a GeoJSON `Polygon` (circle approximation) on a MapLibre `fill` + `line` layer, updated whenever the radius field changes.
+- This is the most documented pattern for React + react-map-gl and requires no Deck.gl involvement for the interactive editing layer.
+
+### 8. Scenario form persistence
+
+No draft persistence. Form state is ephemeral — if the user refreshes, the form resets. Named saves are owned by the backend (PostgreSQL) and loaded on demand. Zustand `persist` middleware is not used for the scenario form.
