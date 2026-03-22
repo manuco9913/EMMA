@@ -374,32 +374,86 @@ requests to fetch only the tiles needed at the current zoom:
 
 ---
 
-## Open Questions
+## Final Decisions
 
-1. **Network link speed between backend and frontend?** Over 100 Mbit,
-   compression is mandatory to hit 1–3 s.
+### 9. HDF5 storage format — polar confirmed
 
-2. **Does color threshold adjustment need to be live (without re-fetch)?** If
-   yes, Phase 1 CPU color mapping is insufficient for interactive use — GPU
-   shader approach (Phase 2) is needed from the outset.
+**Decision: HDF5 stores polar `[D × A]` per height slice per entity.** The
+backend rasterizes polar → Cartesian on-the-fly before serving.
 
-3. **How many height levels per scenario?** If ≤10, pre-caching all levels at
-   load time is viable. If 50+, demand-fetch with adjacent pre-fetch is needed.
+MATLAB writes per-entity output in polar format `[Height × Distance × Angle]`,
+which is the natural output of the ray-tracing model. No pre-rasterized
+Cartesian grid is stored — this allows changing combination method and color
+breakpoints without re-running MATLAB.
 
-4. **Is the grid always axis-aligned (north-up rectangle)?** If rotated,
-   four-corner coordinates in MapLibre/BitmapLayer are needed.
+### 10. Polar → Cartesian rasterization method
 
-5. **Can the backend cache the current slice in memory?** A server-side LRU
-   cache keyed by `(scenarioId, heightLevel)` avoids re-reading HDF5 on
-   rapid slider scrubbing.
+**Decision: bilinear interpolation via `scipy.ndimage.map_coordinates(order=1)`
+with pre-computed per-entity coordinate arrays.**
 
-6. **What GPU hardware is the deployment target?** Confirm
-   `gl.getParameter(gl.MAX_TEXTURE_SIZE) >= 4096`. Add a fallback that splits
-   into 2×2 texture tiles if below 4000.
+For each Cartesian output cell `(x, y)`:
+1. Convert to polar `(r, θ)` relative to entity origin
+2. `r_coord = r / distance_step_m` (float, not snapped)
+3. `θ_coord = θ_normalized / angle_step_deg` (float, not snapped)
+4. `map_coordinates(polar_slice_2d, [[r_coords], [θ_coords]], order=1)` —
+   bilinear interpolation at the four surrounding polar samples
 
-7. **Does HDF5 store a pre-rasterized Cartesian grid or raw polar
-   [distance × angle] data?** If polar, the backend must reproject to a
-   Cartesian grid before serving, adding computation time to the endpoint.
+Rationale for `order=1` over alternatives:
+- **Nearest-neighbor (`order=0`)**: rejected — blocky artifacts, especially
+  where arc gap (349 m at 200 km) exceeds the 100 m output cell size
+- **Bicubic (`order=3`)**: rejected — Gibbs-like overshoot at sharp shadow
+  boundaries common in propagation data
+- **scipy `griddata` (scattered)**: rejected — O(N log N) setup, too slow for
+  16M output points
+- **`order=1` (bilinear)**: smooth, no overshoot, O(N_output) per call,
+  standard for propagation rasterization
 
-8. **Multiple simultaneous entities?** Overlaying slices from multiple entities
-   requires multi-layer support and explicit alpha-blending logic.
+### 11. Coordinate array pre-computation
+
+**Decision: pre-compute `r_coords` and `theta_coords` arrays per entity once
+after preprocessing; cache in memory for active scenario.**
+
+The coordinate arrays (shape `[W_grid × H_grid]`, float32, ~64 MB each × 2
+per entity) depend only on entity position, entity radius, and output grid
+geometry — all known after preprocessing, before MATLAB runs. They are
+invariant across height levels.
+
+Pipeline:
+1. After preprocessing completes, compute and save `entity_{id}_coords.npy`
+   to the job directory alongside the HDF5 file
+2. On first slice request for the scenario, load coordinate arrays into
+   an in-memory LRU cache
+3. Per request: `ProcessPoolExecutor` over entities → `map_coordinates` on
+   each entity's polar slice using cached coordinate arrays → element-wise
+   combination (max by default) → return binary
+
+**Performance (4000×4000 grid, 10 entities, 8 cores):**
+- `map_coordinates` per entity: ~300–1000 ms
+- With parallelism: ~0.5–1.5 s total — within the 1–3 s target
+
+If coordinate arrays exceed available memory, recompute per request:
+`r = np.sqrt(dx² + dy²)`, `theta = np.arctan2(dy, dx)` over 16M cells
+takes ~100–200 ms per entity in NumPy — acceptable fallback.
+
+---
+
+## Open Questions (Deferred Post-Prototype)
+
+1. **Network link speed between backend and frontend.** Over 100 Mbit,
+   compression is mandatory to hit 1–3 s. Confirm deployment link speed.
+
+2. **Axis alignment.** Is the output grid always north-up (axis-aligned
+   rectangle)? If rotated, four-corner coordinates must be used in
+   MapLibre/BitmapLayer instead of a simple bounding box.
+
+3. **Backend slice LRU cache.** Cache rasterized Cartesian slices keyed by
+   `(scenarioId, entityId, heightLevel)` to avoid repeated rasterization on
+   rapid slider scrubbing. Size limit TBD based on available RAM.
+
+4. **GPU texture size floor.** Verify `gl.getParameter(gl.MAX_TEXTURE_SIZE) >= 4096`
+   at runtime on deployment hardware. Add 2×2 tile fallback if below 4000.
+
+5. **Multi-entity visual layering.** Combination method (max by default) is
+   applied server-side before serving. If per-entity overlays are ever needed
+   client-side, each entity would require a separate R32F texture and
+   alpha-blending logic in the shader.
