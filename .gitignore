@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.env
+data/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Editor
+.DS_Store
+*.swp
+*.swo

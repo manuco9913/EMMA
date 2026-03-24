@@ -1,0 +1,151 @@
+.entity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.entity-hint {
+  color: #64748b;
+  font-size: 12px;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.entity-card {
+  background: #0f1117;
+  border: 1px solid #2d3148;
+  border-radius: 6px;
+  padding: 10px;
+  transition: border-color 0.15s;
+}
+
+.entity-card.placing {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px #f59e0b33;
+}
+
+.entity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.entity-number {
+  font-size: 12px;
+  font-weight: 600;
+  color: #60a5fa;
+}
+
+.entity-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.place-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.place-btn:hover {
+  border-color: #60a5fa;
+  color: #60a5fa;
+}
+
+.place-btn.active {
+  background: #f59e0b22;
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.place-btn.positioned {
+  border-color: #22c55e44;
+  color: #4ade80;
+}
+
+.remove-btn {
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.remove-btn:hover {
+  background: #7f1d1d;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.entity-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.entity-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.entity-field-label {
+  color: #64748b;
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+.entity-input {
+  background: #1a1d2e;
+  border: 1px solid #2d3148;
+  border-radius: 4px;
+  color: #e2e8f0;
+  padding: 4px 8px;
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+  text-align: right;
+}
+
+.entity-input:focus {
+  border-color: #3b82f6;
+}
+
+.add-entity-btn {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px dashed #2d3148;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-entity-btn:hover {
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
