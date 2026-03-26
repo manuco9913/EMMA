@@ -1,4 +1,4 @@
-import type { GeoJSON } from "geojson";
+import type { FeatureCollection } from "geojson";
 
 const ENTITY_COLORS = [
   "#ef4444", "#3b82f6", "#22c55e", "#f59e0b", "#a855f7",
@@ -11,7 +11,7 @@ export function circleGeoJSON(
   lon: number,
   radiusKm: number,
   steps = 64
-): GeoJSON.FeatureCollection {
+): FeatureCollection {
   const coords: [number, number][] = [];
   const earthRadiusKm = 6371;
 

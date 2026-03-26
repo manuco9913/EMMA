@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSimStore } from "../store";
+import { useSimStore, type SimState } from "../store";
 import ScenarioForm from "./ScenarioForm";
 import HeightSlider from "./HeightSlider";
 import { apiClient } from "../api/client";
@@ -12,7 +12,6 @@ export default function ScenarioPanel() {
   const {
     job,
     activeRun,
-    activeScenario,
     draftName,
     draftEntities,
     heightMinM,
@@ -22,6 +21,8 @@ export default function ScenarioPanel() {
     gridCellSizeM,
     includeTerrain,
     combinationMethod,
+    pathLossExp,
+    noiseStdDb,
     startJob,
     updateJobProgress,
     completeJob,
@@ -46,6 +47,8 @@ export default function ScenarioPanel() {
         grid_cell_size_m: gridCellSizeM,
         include_terrain: includeTerrain,
         combination_method: combinationMethod,
+        path_loss_exp: pathLossExp,
+        noise_std_db: noiseStdDb,
       });
 
       startJob(resp.job_id);
@@ -136,8 +139,8 @@ function ResultsPanel({
   activeRun,
   job,
 }: {
-  activeRun: ReturnType<typeof useSimStore>["activeRun"];
-  job: ReturnType<typeof useSimStore>["job"];
+  activeRun: SimState["activeRun"];
+  job: SimState["job"];
 }) {
   if (job.status === "running") {
     return (

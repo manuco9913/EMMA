@@ -12,7 +12,7 @@ interface JobState {
   errorMessage: string | null;
 }
 
-interface SimState {
+export interface SimState {
   // Scenario draft
   draftName: string;
   draftEntities: DraftEntity[];
@@ -23,6 +23,8 @@ interface SimState {
   gridCellSizeM: number;
   includeTerrain: boolean;
   combinationMethod: "max" | "sum";
+  pathLossExp: number;
+  noiseStdDb: number;
 
   // Active result
   activeScenario: ScenarioOut | null;
@@ -44,7 +46,8 @@ interface SimState {
   setScenarioParams: (params: Partial<Pick<SimState,
     "heightMinM" | "heightMaxM" | "heightStepM" |
     "angularResolutionDeg" | "gridCellSizeM" |
-    "includeTerrain" | "combinationMethod"
+    "includeTerrain" | "combinationMethod" |
+    "pathLossExp" | "noiseStdDb"
   >>) => void;
 
   startJob: (jobId: string) => void;
@@ -70,6 +73,8 @@ export const useSimStore = create<SimState>((set) => ({
   gridCellSizeM: 100,
   includeTerrain: true,
   combinationMethod: "max",
+  pathLossExp: 2.0,
+  noiseStdDb: 1.5,
 
   activeScenario: null,
   activeRun: null,

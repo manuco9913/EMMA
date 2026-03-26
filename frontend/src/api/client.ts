@@ -22,6 +22,8 @@ export interface ScenarioCreateRequest {
   grid_cell_size_m: number;
   include_terrain: boolean;
   combination_method: "max" | "sum";
+  path_loss_exp: number;
+  noise_std_db: number;
 }
 
 export interface ScenarioCreateResponse {

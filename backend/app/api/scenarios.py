@@ -97,7 +97,7 @@ def _build_scenario_out(row, entities, runs) -> ScenarioOut:
     return ScenarioOut(
         id=str(row["id"]),
         name=row["name"],
-        params=dict(row["params"]),
+params=row["params"] if isinstance(row["params"], dict) else json.loads(row["params"]),
         created_at=row["created_at"].isoformat(),
         entities=[
             EntityOut(

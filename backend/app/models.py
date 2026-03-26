@@ -24,6 +24,8 @@ class ScenarioCreate(BaseModel):
     grid_cell_size_m: float = Field(default=100.0, gt=0)
     include_terrain: bool = True
     combination_method: Literal["max", "sum"] = "max"
+    path_loss_exp: float = Field(default=2.0, ge=1.0, le=5.0)
+    noise_std_db: float = Field(default=1.5, ge=0.0, le=20.0)
 
 
 class ScenarioCreateResponse(BaseModel):

@@ -15,6 +15,8 @@ const schema = z.object({
   gridCellSizeM: z.coerce.number().min(10).max(10000),
   includeTerrain: z.boolean(),
   combinationMethod: z.enum(["max", "sum"]),
+  pathLossExp: z.coerce.number().min(1).max(5),
+  noiseStdDb: z.coerce.number().min(0).max(20),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -29,13 +31,14 @@ export default function ScenarioForm() {
     gridCellSizeM,
     includeTerrain,
     combinationMethod,
+    pathLossExp,
+    noiseStdDb,
     setDraftName,
     setScenarioParams,
   } = useSimStore();
 
   const {
     register,
-    handleSubmit,
     watch,
     formState: { errors },
   } = useForm<FormValues>({
@@ -49,6 +52,8 @@ export default function ScenarioForm() {
       gridCellSizeM,
       includeTerrain,
       combinationMethod,
+      pathLossExp,
+      noiseStdDb,
     },
   });
 
@@ -64,11 +69,14 @@ export default function ScenarioForm() {
         gridCellSizeM: values.gridCellSizeM ?? gridCellSizeM,
         includeTerrain: values.includeTerrain ?? includeTerrain,
         combinationMethod: values.combinationMethod ?? combinationMethod,
+        pathLossExp: values.pathLossExp ?? pathLossExp,
+        noiseStdDb: values.noiseStdDb ?? noiseStdDb,
       });
     });
     return () => sub.unsubscribe();
   }, [watch, setDraftName, setScenarioParams, heightMinM, heightMaxM, heightStepM,
-      angularResolutionDeg, gridCellSizeM, includeTerrain, combinationMethod]);
+      angularResolutionDeg, gridCellSizeM, includeTerrain, combinationMethod,
+      pathLossExp, noiseStdDb]);
 
   return (
     <div className="scenario-form">
@@ -141,6 +149,34 @@ export default function ScenarioForm() {
         <label className="form-checkbox">
           <input type="checkbox" {...register("includeTerrain")} />
           Include terrain data
+        </label>
+      </section>
+
+      <section className="form-section">
+        <h3 className="section-title">Mock Settings</h3>
+        <label className="form-label">
+          Path Loss Exponent
+          <input
+            className="form-input"
+            type="number"
+            step="0.1"
+            min="1"
+            max="5"
+            {...register("pathLossExp")}
+          />
+          {errors.pathLossExp && <span className="form-error">{errors.pathLossExp.message}</span>}
+        </label>
+        <label className="form-label">
+          Noise Std Dev (dB)
+          <input
+            className="form-input"
+            type="number"
+            step="0.5"
+            min="0"
+            max="20"
+            {...register("noiseStdDb")}
+          />
+          {errors.noiseStdDb && <span className="form-error">{errors.noiseStdDb.message}</span>}
         </label>
       </section>
     </div>

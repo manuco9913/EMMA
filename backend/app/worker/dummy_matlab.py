@@ -34,9 +34,12 @@ def _generate_dummy_grid(
     height_levels: int,
     grid_w: int,
     grid_h: int,
+    params: dict,
 ) -> np.ndarray:
     """Generate plausible-looking propagation data with distance falloff."""
     west, south, east, north = bbox
+    path_loss_exp = params.get("path_loss_exp", 2.0)
+    noise_std_db = params.get("noise_std_db", 1.5)
     rng = np.random.default_rng(42)
 
     # Shape: [height_levels, grid_h, grid_w]
@@ -61,12 +64,12 @@ def _generate_dummy_grid(
             with np.errstate(divide="ignore", invalid="ignore"):
                 fspl = np.where(
                     dist_km > 0,
-                    20 * np.log10(dist_km + 0.001) + 20 * np.log10(entity["frequency_hz"]) - 147.55,
+                    10 * path_loss_exp * np.log10(dist_km + 0.001) + 20 * np.log10(entity["frequency_hz"]) - 87.55,
                     0.0,
                 )
             power_dbm = 10 * math.log10(entity["power_w"] * 1000)
             signal = power_dbm - fspl + height_factor * 2
-            noise = rng.normal(0, 1.5, size=(grid_h, grid_w)).astype(np.float32)
+            noise = rng.normal(0, noise_std_db, size=(grid_h, grid_w)).astype(np.float32)
             signal = signal + noise
 
             # Mask outside radius
@@ -126,6 +129,7 @@ async def run_dummy_matlab(
         height_levels,
         grid_w,
         grid_h,
+        scenario_params,
     )
 
     await notify_fn({"type": "progress", "pct": 70})

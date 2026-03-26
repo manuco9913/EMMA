@@ -6,7 +6,8 @@
       "Bash(git push:*)",
       "Bash(npm --version)",
       "Bash(py --version)",
-      "Bash(cmd.exe /c \"docker --version\" 2>&1)"
+      "Bash(cmd.exe /c \"docker --version\" 2>&1)",
+      "Bash(docker compose:*)"
     ]
   }
 }
