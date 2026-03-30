@@ -81,21 +81,19 @@ researchers, telecom.
 
 ### Frontend
 
+See `frontend-plan.md` for component structure, form rendering, and color scale details.
 
-| Concern           | Decision                                                               |
-| ----------------- | ---------------------------------------------------------------------- |
-| Framework         | React 19                                                               |
-| Build tool        | Vite 6                                                                 |
-| Language          | TypeScript 5                                                           |
-| Map library       | MapLibre GL JS 4                                                       |
-| React map wrapper | react-map-gl v7+ (MapLibre mode)                                       |
-| Map tile format   | PMTiles (vector MVT) served from backend static files                  |
-| Tile generation   | Planetiler (from OSM PBF) or Protomaps pre-built extract               |
-| Heatmap layer     | Custom Deck.gl layer — R32F texture + GLSL fragment shader             |
-| Color ramp        | Fixed palette, user-adjustable breakpoints; GPU-only (shader uniforms) |
-| Form management   | react-hook-form 7 + Zod 3                                              |
-| State management  | Zustand 5                                                              |
-| SSE client        | Browser-native `EventSource`                                           |
+| Concern           | Decision                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| Framework         | React 19 + Vite 6 + TypeScript 5                                                           |
+| Map library       | MapLibre GL JS 4 via react-map-gl v7+                                                      |
+| Map tile format   | PMTiles (vector MVT) served from backend static files                                      |
+| Tile generation   | Planetiler (from OSM PBF) or Protomaps pre-built extract                                   |
+| Heatmap layer     | Custom Deck.gl layer — R32F texture + GLSL fragment shader                                 |
+| Color ramp        | User-defined min/max colors + dBm thresholds per stop (2–20); GPU-only (shader uniforms)  |
+| Form management   | react-hook-form 7 + Zod 3; forms schema-driven from `/contracts` (see `contracts.md`)     |
+| State management  | Zustand 5                                                                                  |
+| SSE client        | Browser-native `EventSource`                                                               |
 
 
 ### Heatmap Slice Delivery
@@ -128,28 +126,13 @@ researchers, telecom.
 
 ## Scenario Model
 
-A **scenario** has:
+See `contracts.md` for full field schema. Summary:
 
-- A **name** (user-defined)
-- **2–10 entities** (wave sources), each configured with:
-  - Geographic position (lat/lon, placed on map)
-  - Frequency, Power/amplitude, Beam direction/azimuth, Antenna height
-- **Per-entity radius** (km): each entity has its own circle, drawn on the map by dragging a circle handle. No shared AOI.
-  - Combined output area = **bounding box** of all entity circles
-    - West: min(entity_lon − radius), East: max(entity_lon + radius), North/South: same
-  - Cells outside a given entity's circle = null (no contribution from that entity)
-  - Combination (max by default) is applied cell-by-cell across all entity grids per height level
-- **Beam direction/azimuth**: property passed through to MATLAB. Backend always generates full 360° ray list; MATLAB applies antenna gain pattern internally.
-- Height simulation parameters: min height, max height, step size (user-configurable)
-- **Angular resolution**: fixed angle between rays (degrees/vector), default **0.1°**
-  - Vector count = `angular_window / step_angle` — no cap
-  - At 0.1° step, full 360° = 3,600 vectors
-  - User can adjust step angle to trade accuracy for speed
-  - Arc gap at 200km: 0.1° → 349m, 0.05° → 175m
-- **Output Cartesian grid cell size**: default **100m × 100m**, user-overridable
-- **Include terrain data** toggle (default: on)
-  - When off: terrain profile is flat (all elevations = 0), no DEM queries
-- **Combination method** for multi-entity results: max (default), sum, or other (user-selectable)
+- **Name** (string), **2–10 entities**, height range + step, angular resolution (default 0.1°, range 0.01–2.0°), grid cell size (default 100m), terrain toggle, combination method (max/mean/sum)
+- **Entity**: label, position (lat/lon), frequency, power, azimuth, antenna_height, radius (km)
+- **Per-entity radius**: each entity has its own AOI circle. Combined output = bounding box of all circles. Cells outside an entity's circle = null. Combination applied cell-by-cell per height level.
+- **Azimuth** passed through to MATLAB; backend always generates full 360° rays — MATLAB applies gain pattern internally.
+- Angular resolution: `vector_count = angular_window / step_angle` (no cap). At 0.1°, full 360° = 3,600 vectors.
 
 ### Run / Save Model
 
@@ -162,73 +145,35 @@ A **scenario** has:
 
 ## Backend Preprocessing Pipeline
 
-The backend is **not just an API** — it does significant geometric preprocessing before
-MATLAB is invoked.
+Runs before MATLAB is invoked. Four steps per entity:
 
-### Step 1: Angular Coverage Calculation
+1. **Ray generation** — generate azimuths: `angular_window / step_angle` (e.g. 3,600 at 0.1°)
+2. **Terrain profile** — for each azimuth, march outward in 100m steps to entity radius:
+   - `pyproj.Geod.fwd` (vectorized) → lat/lon per step
+   - `rasterio` window read on GDAL VRT mosaic → terrain height per step
+   - Result: list of `{ distance_m, lat, lon, terrain_height_m }` per azimuth
+3. **Package for MATLAB** — write HDF5 input (polar format: per-entity list of vectors; schema deferred)
+4. **Pre-compute coordinate arrays** — for each entity, compute `r_coords` + `theta_coords` float32 arrays
+   of shape `[W_grid × H_grid]` mapping each Cartesian output cell to polar coordinates in entity frame.
+   Stored as `entity_{id}_coords.npy`. Invariant across height levels and MATLAB runs.
 
-For each entity:
-
-1. Generate full 360° ray list (or user-limited beam sector)
-2. Divide angular window by resolution → list of azimuths, count = `angular_window / step_angle`
-  - E.g., 0.1° step, full 360° → 3,600 azimuths
-
-### Step 2: Terrain Profile per Vector
-
-For each azimuth:
-
-1. March outward from entity in 100m steps up to entity's radius
-2. Convert (entity position, azimuth, distance) → (lat, lon) using `pyproj.Geod.fwd` (vectorized, NumPy arrays)
-3. Query terrain elevation at each (lat, lon) via `rasterio` window read on the GDAL VRT mosaic
-4. Build vector as ordered list of `{ distance_m, lat, lon, terrain_height_m }`
-
-### Step 3: Package for MATLAB
-
-- MATLAB receives polar-format input: per-entity list of vectors
-- Each vector: azimuth + distance/height profile
-- Format: HDF5 input file (schema deferred — agreed with MATLAB developer)
-
-### Step 4: Pre-compute Rasterization Coordinate Arrays
-
-For each entity, after preprocessing:
-
-- Compute `r_coords` and `theta_coords` float32 arrays of shape `[W_grid × H_grid]`
-mapping each Cartesian output cell back to its polar coordinate in the entity's frame
-- Store as `entity_{id}_coords.npy` alongside the job's HDF5 file
-- These arrays are invariant across height levels and across MATLAB runs —
-they depend only on entity position and output grid geometry
-
-### Scale
-
-- Vector count = `angular_window / step_angle` — no cap
-- At 0.1° step, full 360° = 3,600 vectors; at 200km radius = 2,000 distance steps/vector
-→ **7.2M terrain queries per entity**
-- With 10 entities → 72M terrain elevation queries per scenario
-- Vectorized raster sampling via rasterio window read + NumPy array indexing: ~30–120 s
+**Scale**: 0.1° step + 200km radius = 3,600 vectors × 2,000 steps = 7.2M terrain queries/entity.
+10 entities → 72M queries. Vectorized via rasterio + NumPy: ~30–120 s.
 
 ---
 
 ## Polar → Cartesian Rasterization
 
-MATLAB outputs per-entity 3D matrices in polar format `[Height × Distance × Angle]`.
-The slice endpoint must serve a Cartesian grid. Rasterization is performed on-the-fly
-at request time using pre-computed coordinate arrays.
+MATLAB outputs `[Height × Distance × Angle]` per entity. Slice endpoint serves a Cartesian grid.
+On-the-fly at request time using pre-computed coordinate arrays:
 
-### Per-slice pipeline (per height level request):
+1. Read polar slice `[D × A]` from HDF5 (h5py hyperslab)
+2. `scipy.ndimage.map_coordinates(slice, [r_coords, theta_coords], order=1)` → Cartesian `[W × H_grid]` float32
+3. All entities in parallel (`ProcessPoolExecutor`)
+4. Element-wise combination (max by default); cells outside entity radius → null
+5. Serialize: 56-byte header + `Float32Array` → HTTP response
 
-1. For each entity: read polar slice `[D × A]` from HDF5 via h5py hyperslab read
-2. Load cached `r_coords` and `theta_coords` from memory (or disk if evicted)
-3. `scipy.ndimage.map_coordinates(polar_slice_2d, [r_coords, theta_coords], order=1)`
-  → Cartesian slice `[W × H_grid]` float32
-4. All entities in parallel via `ProcessPoolExecutor`
-5. Element-wise combination (max by default) across entity gridssy
-6. Cells outside entity radius → null / masked
-7. Serialize to binary: header + `Float32Array` → HTTP response
-
-### Performance target (4000×4000 grid, 10 entities, 8 cores):
-
-- ~0.5–1.5 s total rasterization time
-- Fits within 1–3 s end-to-end latency budget (including HDF5 read and transfer)
+**Target**: ~0.5–1.5 s for 4000×4000 grid, 10 entities, 8 cores. 1–3 s end-to-end.
 
 ---
 
@@ -262,8 +207,7 @@ only a config change.
 
 - **Phase 1–2**: 2D heatmap overlaid on flat map (custom Deck.gl R32F layer)
 - **Height scrubbing**: slider + direct numeric input; ring-buffer prefetch of ±2 adjacent levels
-- **Color ramp**: fixed palette, user-adjustable breakpoints; adjusting breakpoints
-updates shader uniforms only — no re-fetch
+- **Color ramp**: user-defined min/max colors + dBm thresholds (2–20 stops); adjusting updates shader uniforms only — no re-fetch
 - **Phase 3+**: 3D terrain visualization (Cesium.js) — not now
 
 ---
@@ -369,22 +313,8 @@ repo/
 ├── infra/
 │   ├── docker-compose.yml
 │   └── nginx/
-├── contracts/              # Shared API schemas (JSON Schema or TypeScript types)
+├── contracts/              # JSON Schema files (source of truth — see contracts.md)
+├── contracts.md            # Schema contract design
+├── frontend-plan.md        # Frontend component structure and form rendering
 └── system-plan.md          # This document
 ```
-
----
-
-## Immediate Next Steps
-
-1. **Scaffold monorepo** — folder structure, `pyproject.toml`, `package.json`,
-  docker-compose skeleton, nginx config
-2. **Build Phase 1** — end-to-end thin slice with dummy computation:
-  - FastAPI skeleton (scenario POST, job SSE, slice GET)
-  - PostgreSQL schema (scenarios, jobs, runs tables)
-  - Dummy MATLAB subprocess (Python script writing random HDF5)
-  - Preprocessing stub + coordinate array pre-computation
-  - React app: map, entity form, height slider, R32F heatmap layer
-3. **Validate end-to-end** — submit scenario, receive SSE completion, scrub height slider,
-  confirm heatmap renders and color breakpoints update without re-fetch
-
