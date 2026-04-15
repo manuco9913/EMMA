@@ -10,8 +10,10 @@ Files live in `/contracts/`. Backend serves them at runtime — no rebuild neede
 - `GET /api/schema/entity`
 - `GET /api/schema/scenario`
 
-Frontend derives Zod schemas at runtime from the served JSON Schema.
-Backend mirrors the same rules in Pydantic models (manual, by convention).
+Frontend validates at runtime using **ajv 8** directly against the served JSON Schema (via `@hookform/resolvers/ajv`).
+Backend validates against the same JSON Schema files — language-agnostic by design:
+- Python: Pydantic models (manual, by convention)
+- C#: NJsonSchema
 
 ---
 
@@ -20,7 +22,7 @@ Backend mirrors the same rules in Pydantic models (manual, by convention).
 | `x-widget` | JSON Schema expression | Renders as |
 |---|---|---|
 | — | `type: string` | Text input |
-| — | `type: number` + min/max/step | Numeric input + `x-unit` suffix |
+| — | `type: number` | Numeric input + `x-unit` suffix |
 | — | `type: string, enum: [...]` | Dropdown |
 | — | `type: boolean` | Toggle |
 | `file` | `type: string` | File path input |
@@ -28,6 +30,7 @@ Backend mirrors the same rules in Pydantic models (manual, by convention).
 | `range` | `type: object, properties: {min, max}` | Dual min/max input |
 | `matrix` | `type: string` | File upload + read-only preview |
 | `value-or-file` | `oneOf: [{type: number}, {type: string}]` | Inline value with toggle to file path |
+| — | `type: object, properties: {...}` | Grouped section (bbox); each property renders with its own widget; arbitrary nesting |
 
 ---
 

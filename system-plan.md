@@ -32,6 +32,7 @@ researchers, telecom.
 
 ### Backend
 
+> **Transition strategy**: FastAPI is the current implementation (Phase 1–2). A parallel C# rewrite is in progress. The JSON Schema contracts in `/contracts/` are the shared source of truth — both backends validate against the same schema files (Python: Pydantic by convention; C#: NJsonSchema). The frontend is backend-language-agnostic by design.
 
 | Concern              | Decision                                            |
 | -------------------- | --------------------------------------------------- |
@@ -91,7 +92,7 @@ See `frontend-plan.md` for component structure, form rendering, and color scale 
 | Tile generation   | Planetiler (from OSM PBF) or Protomaps pre-built extract                                   |
 | Heatmap layer     | Custom Deck.gl layer — R32F texture + GLSL fragment shader                                 |
 | Color ramp        | User-defined min/max colors + dBm thresholds per stop (2–20); GPU-only (shader uniforms)  |
-| Form management   | react-hook-form 7 + Zod 3; forms schema-driven from `/contracts` (see `contracts.md`)     |
+| Form management   | react-hook-form 7 + ajv 8; forms schema-driven from `/contracts` (see `contracts.md`)     |
 | State management  | Zustand 5                                                                                  |
 | SSE client        | Browser-native `EventSource`                                                               |
 
@@ -266,7 +267,7 @@ Silent mismatch produces incorrect terrain profiles.
 - React frontend with MapLibre GL JS map (PMTiles, local style)
 - Entity placement + per-entity radius circle drawing (MapLibre Marker + GeoJSON fill layer)
 - Scenario form (name, entities, signal params, height config, angular resolution,
-no-terrain toggle) — react-hook-form + Zod
+no-terrain toggle) — react-hook-form + ajv
 - FastAPI backend receives scenario, runs **stub preprocessing** (no real terrain),
 pre-computes dummy coordinate arrays
 - **Dummy MATLAB** — returns synthetic 3D matrix (random values) in correct HDF5 format
@@ -301,7 +302,7 @@ repo/
 │   ├── src/
 │   │   ├── map/            # MapLibre + react-map-gl components
 │   │   ├── heatmap/        # Custom Deck.gl R32F layer + GLSL shaders
-│   │   ├── scenario/       # Form (react-hook-form + Zod), entity list
+│   │   ├── scenario/       # Form (react-hook-form + ajv), entity list
 │   │   └── store/          # Zustand slices (scenario, jobs, UI)
 │   └── public/static/      # PMTiles file, fonts, sprites, style JSON
 ├── backend/
