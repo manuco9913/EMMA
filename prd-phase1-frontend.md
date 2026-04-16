@@ -1,8 +1,8 @@
-# PRD — Wave Propagation Simulator: Phase 1 Frontend
+# PRD — Wave Propagation Simulator: Phase 0.5 Frontend
 
 ## Problem Statement
 
-The existing wave propagation simulation tool is a Unity/.NET 4.8 monolith. Unity — a game engine — is the wrong host for a simulation/analysis platform: it couples UI, computation, and rendering into a single process with no clear service boundaries, making it difficult to deploy, extend, or test. This PRD covers **Phase 1 of the rewrite: the complete frontend application and its API/schema contracts**.
+The existing wave propagation simulation tool is a Unity/.NET 4.8 monolith. Unity — a game engine — is the wrong host for a simulation/analysis platform: it couples UI, computation, and rendering into a single process with no clear service boundaries, making it difficult to deploy, extend, or test. This PRD covers **Phase 0.5 of the rewrite: the complete frontend application**.
 
 ---
 
@@ -11,7 +11,7 @@ The existing wave propagation simulation tool is a Unity/.NET 4.8 monolith. Unit
 Build a React 19 + Vite 6 + TypeScript 5 single-page application with:
 
 - A **schema-driven form** that fetches field definitions from the backend at runtime and validates using ajv 8 against the same JSON Schema files used by the C# backend — no field definitions hardcoded in frontend code.
-- An **interactive MapLibre GL JS 4 map** (offline raster tiles served from the local backend — no external tile CDN) with draggable entity markers and per-entity radius circles.
+- An **interactive MapLibre GL JS 4 map** (offline vector tiles — PMTiles, Protomaps schema, zoom 0–10, ~500 MB — served from `frontend/public/` via Vite static middleware; no backend required, no external tile CDN) with draggable entity markers and per-entity radius circles.
 - A **job submission + SSE flow**: POST the scenario, immediately open a native `EventSource` to stream job progress.
 - A **height slider with ring-buffer prefetch** (±2 levels) that fetches binary propagation slices and renders them as a custom Deck.gl R32F texture layer with a hardcoded GLSL color ramp.
 - A **save/discard run flow**: confirmation dialog before an unsaved result is overwritten; user names and saves a run for permanent storage.
@@ -83,7 +83,7 @@ Alongside the frontend, two JSON Schema contract files (`/contracts/entity.schem
 
 **`CoordinateField`** — Bidirectional sync via Zustand `mapStore`. Form position change → `mapStore.setMarker`. Map marker drag → react-hook-form `setValue`.
 
-**Map component** — MapLibre GL JS 4 via react-map-gl v7. Offline raster tiles: the backend serves a pre-downloaded MBTiles file at `GET /api/tiles/{z}/{x}/{y}.png` — no requests to any external tile CDN. The MapLibre tile URL is pointed at this local endpoint. Entity markers as `<Marker>` (draggable). Radius circles as a GeoJSON `fill` layer, updated reactively from `mapStore`.
+**Map component** — MapLibre GL JS 4 via react-map-gl v7. Offline vector tiles via PMTiles: the `pmtiles` protocol handler is registered once at app initialisation (`maplibregl.addProtocol('pmtiles', ...)`); the MapLibre style JSON at `/style.json` references `pmtiles:///tiles/tiles.pmtiles` as its tile source, `/fonts/{fontstack}/{range}.pbf` for glyphs, and `/sprites/sprite` for sprites — all served from `frontend/public/` by Vite's static middleware. No backend and no external CDN required. Entity markers as `<Marker>` (draggable). Radius circles as a GeoJSON `fill` layer, updated reactively from `mapStore`.
 
 **Heatmap layer** — Custom Deck.gl layer. Uploads `Float32Array` into a WebGL R32F texture. GLSL fragment shader applies a hardcoded linear color ramp (NaN → transparent, min → black, max → yellow). Georeferenced via `bounds` from the slice header.
 
