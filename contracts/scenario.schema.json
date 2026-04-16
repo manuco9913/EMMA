@@ -24,7 +24,7 @@
     "height_range": {
       "type": "object",
       "title": "Height Range",
-      "x-widget": "range",
+      "x-ui-component": "range",
       "x-unit": "m",
       "required": ["min", "max"],
       "additionalProperties": false,

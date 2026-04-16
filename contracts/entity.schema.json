@@ -14,7 +14,7 @@
     "position": {
       "type": "object",
       "title": "Position",
-      "x-widget": "coordinate",
+      "x-ui-component": "coordinate",
       "required": ["lat", "lon"],
       "additionalProperties": false,
       "properties": {
@@ -31,17 +31,13 @@
       }
     },
     "frequency": {
+      "type": "number",
       "title": "Frequency",
-      "x-widget": "value-or-file",
       "x-unit": "MHz",
-      "oneOf": [
-        { "type": "number", "minimum": 0 },
-        { "type": "string", "minLength": 1 }
-      ]
     },
     "power": {
       "title": "Power",
-      "x-widget": "value-or-file",
+      "x-ui-component": "numeric-or-file",
       "x-unit": "dBm",
       "oneOf": [
         { "type": "number" },

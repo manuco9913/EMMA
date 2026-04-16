@@ -19,7 +19,7 @@ Backend validates against the same JSON Schema files — language-agnostic by de
 
 ## Type System
 
-| `x-widget` | JSON Schema expression | Renders as |
+| `x-ui-component` | JSON Schema expression | Renders as |
 |---|---|---|
 | — | `type: string` | Text input |
 | — | `type: number` | Numeric input + `x-unit` suffix |
@@ -29,17 +29,17 @@ Backend validates against the same JSON Schema files — language-agnostic by de
 | `coordinate` | `type: object, properties: {lat, lon}` | Lat/lon inputs + map marker |
 | `range` | `type: object, properties: {min, max}` | Dual min/max input |
 | `matrix` | `type: string` | File upload + read-only preview |
-| `value-or-file` | `oneOf: [{type: number}, {type: string}]` | Inline value with toggle to file path |
-| — | `type: object, properties: {...}` | Grouped section (bbox); each property renders with its own widget; arbitrary nesting |
+| `numeric-or-file` | `oneOf: [{type: number}, {type: string}]` | Inline value with toggle to file path |
+| — | `type: object, properties: {...}` | Grouped section (bbox); each property renders with its own UI component; arbitrary nesting |
 
 ---
 
 ## Conditional Visibility
 
-Any field may declare `x-showIf`. Conditions reference fields within the same object only.
+Any field may declare `x-show-if`. Conditions reference fields within the same object only.
 
 ```json
-"x-showIf": {
+"x-show-if": {
   "and": [
     { "field": "terrain_enabled", "op": "eq", "value": true },
     { "field": "angular_resolution", "op": "lt", "value": 1.0 }
@@ -58,8 +58,8 @@ Top-level key is `and` or `or`. Each entry is `{ field, op, value }`.
 |---|---|---|
 | `label` | string | — |
 | `position` | coordinate | lat: −90–90, lon: −180–180 |
-| `frequency` | value-or-file | x-unit: MHz |
-| `power` | value-or-file | x-unit: dBm |
+| `frequency` | numeric-or-file | x-unit: MHz |
+| `power` | numeric-or-file | x-unit: dBm |
 | `azimuth` | number | min: 0, max: 360, x-unit: ° |
 | `antenna_height` | number | min: 0, x-unit: m |
 | `radius` | number | min: 0.1, x-unit: km |
@@ -81,7 +81,7 @@ Top-level key is `and` or `or`. Each entry is `{ field, op, value }`.
 
 ## File-sourced Fields
 
-When `value-or-file` or `matrix` fields use file mode:
+When `numeric-or-file` or `matrix` fields use file mode:
 - File path is stored as a string reference.
 - Backend reads the file from the shared filesystem at job execution time.
 - No client-side upload or parsing.
