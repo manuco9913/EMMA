@@ -30,8 +30,8 @@ the backend (`GET /api/schema/entity`, `GET /api/schema/scenario`).
 **`SchemaFormRenderer`** — generic component:
 1. Fetches schema on mount (SWR, cached)
 2. Iterates `schema.properties` in key order
-3. Evaluates `x-showIf` against current `watch()` values — hides/shows fields live
-4. Selects renderer by `x-widget` or JSON Schema `type`
+3. Evaluates `x-show-if` against current `watch()` values — hides/shows fields live
+4. Selects renderer by `x-ui-component` or JSON Schema `type`
 5. All field renderers register via react-hook-form `Controller`
 
 **Validation**: Zod schema derived at runtime from the JSON Schema (`deriveZod.ts`).
@@ -50,11 +50,11 @@ One component per type. Each receives: `name`, `label`, field-level schema props
 | `StringField` | `type: string` (no enum) — text input |
 | `EnumField` | `type: string, enum: [...]` — dropdown |
 | `BooleanField` | `type: boolean` — toggle |
-| `FileField` | `x-widget: file` — file path input |
-| `CoordinateField` | `x-widget: coordinate` — lat/lon inputs + map sync |
-| `RangeField` | `x-widget: range` — dual min/max numeric inputs |
-| `MatrixField` | `x-widget: matrix` — file upload + read-only data preview |
-| `ValueOrFileField` | `x-widget: value-or-file` — toggle between numeric input and file path |
+| `FileField` | `x-ui-component: file` — file path input |
+| `CoordinateField` | `x-ui-component: coordinate` — lat/lon inputs + map sync |
+| `RangeField` | `x-ui-component: range` — dual min/max numeric inputs |
+| `MatrixField` | `x-ui-component: matrix` — file upload + read-only data preview |
+| `ValueOrFileField` | `x-ui-component: numeric-or-file` — toggle between numeric input and file path |
 
 ---
 
@@ -111,7 +111,7 @@ frontend/src/
     useEntitySchema.ts       # SWR fetch → GET /api/schema/entity
     useScenarioSchema.ts     # SWR fetch → GET /api/schema/scenario
     deriveZod.ts             # JSON Schema → Zod schema at runtime
-    evaluateShowIf.ts        # Evaluates x-showIf conditions
+    evaluateShowIf.ts        # Evaluates x-show-if conditions
     SchemaFormRenderer.tsx   # Generic form renderer
     fieldRenderers/          # One file per type (see table above)
   map/                       # MapLibre + react-map-gl (see system-plan)
