@@ -33,7 +33,7 @@
     "frequency": {
       "type": "number",
       "title": "Frequency",
-      "x-unit": "MHz",
+      "x-unit": "MHz"
     },
     "power": {
       "title": "Power",
