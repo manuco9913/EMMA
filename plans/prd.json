@@ -1,0 +1,435 @@
+[
+  {
+    "category": "developer",
+    "description": "Bootstrap: project is scaffolded, dependencies installed, dev server and backend are running, and all required static assets are in place",
+    "steps": [
+      "Verify frontend/ directory exists with src/, public/tiles/, and contracts/ subdirectories",
+      "Run npm install inside frontend/ and confirm it exits 0 with all required packages present (maplibre-gl, deck.gl, react-hook-form, zustand, ajv, msw)",
+      "Run tsc --noEmit inside frontend/ and confirm it exits 0 with no type errors",
+      "Start the Vite dev server and confirm it serves the app at localhost:5173 without errors",
+      "Confirm the FastAPI backend is running and GET /api/schema/scenario returns HTTP 200",
+      "Verify frontend/public/tiles/tiles.pmtiles exists on disk"
+    ],
+    "passes": false
+  },
+  {
+    "category": "developer",
+    "description": "JSON Schema contract files committed to repo as single source of truth",
+    "steps": [
+      "Verify /contracts/entity.schema.json exists in the repository",
+      "Verify /contracts/scenario.schema.json exists in the repository",
+      "Confirm both files use JSON Schema draft-07 with x- extension properties",
+      "Validate that no field definitions are duplicated in frontend or backend code",
+      "Confirm ajv 8 (frontend) and NJsonSchema (C# backend) both resolve against these files"
+    ],
+    "passes": false
+  },
+  {
+    "category": "developer",
+    "description": "API contract file defines all endpoint signatures, request/response shapes, and binary slice wire format",
+    "steps": [
+      "Verify /contracts/api.md exists in the repository",
+      "Check that all REST endpoints are listed with their HTTP method and path",
+      "Confirm request and response shapes are documented for each endpoint",
+      "Verify HTTP status codes are documented for each endpoint",
+      "Confirm the binary slice wire format (56-byte header + Float32Array) is fully specified"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Map functions with no internet connection (air-gapped/offline support)",
+    "steps": [
+      "Disconnect the machine from the internet",
+      "Open the application in a browser",
+      "Verify the map renders vector tiles without any network requests to external CDNs",
+      "Confirm tile requests are served from frontend/public/ via Vite static middleware",
+      "Verify the PMTiles file (tiles/tiles.pmtiles) is present under frontend/public/"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Application opens with an interactive map centered on a default location",
+    "steps": [
+      "Navigate to the application root URL",
+      "Verify the map renders on page load without errors",
+      "Confirm the map is centered on the configured default location",
+      "Check that the map is interactive (zoom, pan) immediately on load",
+      "Verify no spinner or loading state blocks map interaction"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Scenario panel is displayed in a left sidebar alongside the map",
+    "steps": [
+      "Open the application",
+      "Verify a left sidebar panel is visible",
+      "Confirm the map fills the remaining right portion of the viewport",
+      "Scroll or interact with the scenario panel and verify the map remains visible",
+      "Check that the sidebar is full height"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Scenario form fields are rendered from the JSON Schema served by the backend at runtime",
+    "steps": [
+      "Open the application and wait for the schema to load from GET /api/schema/scenario",
+      "Verify form fields for name, height range, height step, angular resolution, grid cell size, terrain toggle, and combination method are rendered",
+      "Add a new field to the schema on the backend and reload the app",
+      "Confirm the new field appears in the form without a frontend rebuild",
+      "Verify no scenario field definitions are hardcoded in frontend source code"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can add between 2 and 10 entities to a scenario",
+    "steps": [
+      "Open the application and navigate to the scenario panel",
+      "Add a first entity and verify it appears in the entity list",
+      "Add a second entity and verify the scenario allows submission",
+      "Continue adding entities up to 10 and verify all are accepted",
+      "Attempt to add an 11th entity and verify the UI prevents it"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Entity form fields are rendered from the entity JSON Schema served by the backend",
+    "steps": [
+      "Open the application and wait for schema to load from GET /api/schema/entity",
+      "Add an entity and verify fields for label, position, frequency, power, azimuth, antenna height, and radius are rendered",
+      "Add a new field to entity.schema.json on the backend and reload the app",
+      "Confirm the new field appears in the entity form without a frontend rebuild",
+      "Verify no entity field definitions are hardcoded in frontend source code"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can place an entity by clicking on the map",
+    "steps": [
+      "Open the application and add an entity",
+      "Click a point on the map",
+      "Verify a marker appears at the clicked location",
+      "Confirm the entity's lat/lon fields in the form update to match the clicked coordinates",
+      "Click a different map location and verify the marker and form fields update accordingly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can drag an entity marker to update its position",
+    "steps": [
+      "Open the application and place an entity marker on the map",
+      "Click and drag the marker to a new location",
+      "Verify the marker moves smoothly while dragging",
+      "Release the marker and confirm it stays at the new position",
+      "Verify the entity's lat/lon form fields update to the new coordinates after the drag"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Lat/lon coordinate fields stay in bidirectional sync with the map marker",
+    "steps": [
+      "Place an entity marker on the map and note the lat/lon form values",
+      "Manually type new coordinates into the lat field and verify the map marker moves",
+      "Manually type new coordinates into the lon field and verify the map marker moves",
+      "Drag the marker to a new position and verify the lat/lon form fields update",
+      "Confirm neither input method causes an infinite update loop"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Each entity's radius is visualized as a filled circle on the map",
+    "steps": [
+      "Add an entity with a non-zero radius value",
+      "Verify a filled circle is rendered on the map centered on the entity marker",
+      "Add a second entity and verify it also shows its own radius circle",
+      "Verify circle radii are correctly scaled to match the entity's radius field value",
+      "Confirm circles are rendered as a GeoJSON fill layer"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Radius circle updates in real time as the radius field value changes",
+    "steps": [
+      "Place an entity on the map with an initial radius value",
+      "Change the radius field value to a larger number",
+      "Verify the circle on the map immediately grows without page reload",
+      "Change the radius field value to a smaller number",
+      "Verify the circle on the map immediately shrinks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Numeric fields display a unit suffix indicating the expected unit",
+    "steps": [
+      "Open an entity form and locate the frequency field",
+      "Verify 'MHz' is displayed as a suffix next to the frequency input",
+      "Verify 'dBm' is displayed next to the power field",
+      "Verify 'm' or 'km' is displayed next to applicable distance fields",
+      "Confirm unit suffixes are display-only and not included in the submitted form value"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Fields with x-show-if conditions hide or show dynamically based on other field values",
+    "steps": [
+      "Open the scenario form and locate a field with an x-show-if condition",
+      "Set the controlling field value to the condition's trigger value",
+      "Verify the conditional field becomes visible",
+      "Change the controlling field value to a non-triggering value",
+      "Verify the conditional field is hidden"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "numeric-or-file fields allow toggling between an inline value and a file path",
+    "steps": [
+      "Open an entity form and locate a numeric-or-file field (e.g. frequency or power)",
+      "Verify the field defaults to inline numeric input mode",
+      "Click the toggle to switch to file path mode",
+      "Verify a file path input is displayed in place of the numeric input",
+      "Toggle back to numeric mode and verify the numeric input is restored"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Form validation runs on blur and on submit, enforcing type checks and min/max constraints",
+    "steps": [
+      "Enter an invalid value (e.g. text in a numeric field) and tab away",
+      "Verify a validation error appears immediately on blur without submitting",
+      "Clear the error by entering a valid value and verify the error disappears",
+      "Submit the form with one or more invalid fields",
+      "Verify all invalid fields show errors and submission is blocked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Clear inline error messages appear next to each invalid field",
+    "steps": [
+      "Submit the scenario form with empty required fields",
+      "Verify an error message is displayed directly adjacent to each invalid field",
+      "Confirm error messages describe the specific constraint violated (e.g. 'Required', 'Must be >= 0')",
+      "Fix one invalid field and verify its error message disappears while others remain",
+      "Fix all fields and verify all error messages clear on successful submission"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Submitting a scenario shows a job progress indicator immediately",
+    "steps": [
+      "Fill out a valid scenario form",
+      "Click the submit button",
+      "Verify a job progress indicator appears immediately after submission",
+      "Confirm the indicator is visible while the job is running",
+      "Verify the scenario_id and job_id from the POST response are stored and used"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Job progress streams in real time via SSE without polling",
+    "steps": [
+      "Submit a scenario and observe the network tab",
+      "Verify an EventSource connection opens to /api/scenarios/{scenario_id}/jobs/{job_id}/events",
+      "Confirm progress messages from the SSE stream update the UI in real time",
+      "Verify no polling requests (repeated GET/POST calls) are made during job execution",
+      "Confirm the EventSource connection closes when a done or error event is received"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Heatmap overlay appears automatically when the job completes",
+    "steps": [
+      "Submit a scenario and wait for the SSE done event",
+      "Verify the heatmap overlay renders on the map automatically without user action",
+      "Confirm the heatmap is positioned correctly over the map",
+      "Verify the default height slice is fetched and rendered immediately on job completion",
+      "Check that the heatmap layer is visible and not blocked by other UI elements"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Height slider allows scrubbing through height levels of propagation output",
+    "steps": [
+      "Complete a scenario run so the heatmap is displayed",
+      "Locate the height slider at the bottom of the map",
+      "Drag the slider to a different height level",
+      "Verify the heatmap updates to show the propagation data for the selected height",
+      "Scrub through multiple levels and confirm each level loads and renders correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can type a specific height value numerically in addition to using the slider",
+    "steps": [
+      "Display the heatmap after a completed run",
+      "Locate the numeric input adjacent to the height slider",
+      "Type a specific height value into the numeric input",
+      "Verify the slider moves to the corresponding position",
+      "Confirm the heatmap updates to reflect the typed height value"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Adjacent height levels (±2) are prefetched in the background for smooth scrubbing",
+    "steps": [
+      "Complete a scenario run and observe the network tab",
+      "Select a height level on the slider",
+      "Verify fetch requests for the two levels above and two levels below the current selection are made in the background",
+      "Scrub to an adjacent level and verify it renders immediately without a loading delay",
+      "Confirm the ring buffer holds at most 5 slots and evicts old entries when full"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Heatmap is rendered as a GPU-accelerated R32F texture via a custom Deck.gl layer",
+    "steps": [
+      "Complete a scenario run and wait for the heatmap to appear",
+      "Verify the heatmap layer is implemented as a custom Deck.gl layer",
+      "Confirm the Float32Array from SliceParser is uploaded as an R32F WebGL texture",
+      "Verify the GLSL color ramp is applied (min → black, max → yellow)",
+      "Check that the heatmap renders at interactive frame rates on a large grid"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Null cells outside entity radius areas render as transparent on the heatmap",
+    "steps": [
+      "Complete a scenario run with entities covering only part of the map area",
+      "View the heatmap overlay on the map",
+      "Verify cells outside all entity radius areas are fully transparent",
+      "Confirm the NaN value check in the GLSL shader discards those fragments",
+      "Verify the underlying map tiles remain visible through the transparent cells"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Heatmap is positioned correctly on the map using bounding box from the slice header",
+    "steps": [
+      "Complete a scenario run and display the heatmap",
+      "Verify the heatmap bounds (west, south, east, north) are read from the 56-byte slice header",
+      "Confirm the heatmap overlay is geographically aligned with the map",
+      "Pan and zoom the map and verify the heatmap moves correctly with the map",
+      "Check alignment against known entity positions to confirm correct georeferencing"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can save a completed run by giving it a name",
+    "steps": [
+      "Complete a scenario run so the heatmap is displayed",
+      "Click the save run action",
+      "Enter a name for the run in the save dialog",
+      "Confirm the save action POSTs to the save endpoint with the provided name",
+      "Verify the run is stored and the saved state is reflected in the UI"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Confirmation dialog appears before an unsaved run is deleted",
+    "steps": [
+      "Complete a scenario run without saving it",
+      "Trigger a re-run or action that would overwrite the current unsaved run",
+      "Verify a confirmation dialog appears with 'Save & Re-run', 'Discard & Re-run', and 'Cancel' options",
+      "Click 'Cancel' and verify no data is lost and the dialog closes",
+      "Click 'Discard & Re-run' and verify the unsaved run is deleted and a new run starts"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can re-run a scenario after modifying parameters",
+    "steps": [
+      "Complete an initial scenario run",
+      "Modify one or more scenario parameters in the form",
+      "Click the re-run action",
+      "Verify the modified parameters are submitted in the new POST request",
+      "Confirm the new run's heatmap replaces the previous one after completion"
+    ],
+    "passes": false
+  },
+  {
+    "category": "developer",
+    "description": "evaluateShowIf is a pure function with no side effects, unit testable without DOM or form context",
+    "steps": [
+      "Locate the evaluateShowIf function in the codebase",
+      "Verify it accepts a condition object and a form values object as arguments",
+      "Confirm it returns a boolean with no side effects",
+      "Run unit tests covering and/or operators, all six ops (eq, neq, gt, gte, lt, lte), missing fields, and nested objects",
+      "Verify tests pass without any DOM, React, or form framework imports"
+    ],
+    "passes": false
+  },
+  {
+    "category": "developer",
+    "description": "SliceParser is a pure function that parses an ArrayBuffer and returns a typed result",
+    "steps": [
+      "Locate the SliceParser function in the codebase",
+      "Verify it accepts a raw ArrayBuffer and returns { width, height, minVal, maxVal, bounds, data: Float32Array }",
+      "Run unit tests with a valid ArrayBuffer fixture and verify the parsed result is correct",
+      "Run unit tests with wrong magic bytes and verify a typed SliceParseError is thrown",
+      "Run unit tests with a truncated buffer and a zero-size grid and verify errors are thrown correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "developer",
+    "description": "SchemaFormRenderer accepts a schema object and react-hook-form control as props, testable in isolation",
+    "steps": [
+      "Locate the SchemaFormRenderer component in the codebase",
+      "Verify it accepts schema, control, and watch as props with no hardcoded field names",
+      "Render SchemaFormRenderer in a test with a fixture schema and a test form control",
+      "Assert the correct field renderers are mounted for each property in the fixture schema",
+      "Verify x-show-if conditions hide and show fields correctly within the isolated test"
+    ],
+    "passes": false
+  },
+  {
+    "category": "developer",
+    "description": "Zustand stores are instantiated via factory functions so each test gets a fresh store",
+    "steps": [
+      "Locate the Zustand store definitions for mapStore, jobStore, and uiStore",
+      "Verify each store is created via a factory function rather than a module-level singleton",
+      "Write a test that creates two store instances via the factory",
+      "Mutate state in the first instance and verify the second instance is unaffected",
+      "Confirm no global state leaks between test runs when using the factory pattern"
+    ],
+    "passes": false
+  },
+  {
+    "category": "developer",
+    "description": "Integration tests cover the full flow: form fill → validation → POST → SSE → heatmap render",
+    "steps": [
+      "Locate the integration test suite for the golden path flow",
+      "Verify MSW is used to mock the HTTP layer (schema fetch, POST, SSE, slice fetch)",
+      "Fill the scenario form with valid data in the test and submit",
+      "Simulate SSE progress events and then the done event via the MSW handler",
+      "Assert the heatmap Deck.gl layer receives the correct Float32Array and bounds from SliceParser"
+    ],
+    "passes": false
+  }
+]

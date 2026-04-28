@@ -1,0 +1,10 @@
+2026-04-28: Implemented interactive MapLibre GL map with PMTiles offline tile support.
+- Ran npm install (all deps now present: maplibre-gl, pmtiles, deck.gl, react-hook-form, zustand, ajv, msw, @types/react, etc.)
+- Created src/Map.tsx: registers pmtiles:// protocol, mounts MapLibre map in React via useEffect/useRef, centered on [0, 51.5] zoom 5
+- Updated src/App.tsx to render MapComponent full-screen
+- Added maplibre-gl CSS import to main.tsx
+- Added src/vite-env.d.ts for Vite module type declarations
+- PRD items now passing: "Map functions with no internet connection" + "Application opens with an interactive map centered on a default location"
+- tsc --noEmit: clean; vitest: 6/6 pass
+
+Next: Implement left-sidebar layout ("Scenario panel is displayed in a left sidebar alongside the map")
