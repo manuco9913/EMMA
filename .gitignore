@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.pth
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Claude Code local settings (machine-specific permissions)
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+*.swp
+*.swo
+*.orig
+.idea/
