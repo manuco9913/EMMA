@@ -22,7 +22,7 @@
       "Validate that no field definitions are duplicated in frontend or backend code",
       "Confirm ajv 8 (frontend) and NJsonSchema (C# backend) both resolve against these files"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "developer",

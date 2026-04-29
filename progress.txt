@@ -67,3 +67,11 @@ Next: TBD
 - Vite dev server confirmed running at localhost:5173
 - FastAPI backend confirmed running; GET /api/schema/scenario returns 200 with JSON schema
 - PRD item now passing: "Bootstrap: project is scaffolded, dependencies installed, dev server and backend are running, and all required static assets are in place"
+
+2026-04-30: Verified JSON Schema contract files as single source of truth.
+- contracts/entity.schema.json and contracts/scenario.schema.json already committed with draft-07 + x- extension properties
+- backend/main.py serves both schemas from contracts/ dir (no duplication)
+- frontend reads schemas at runtime via useSchema hook (no duplication)
+- Created src/contracts.test.ts: 10 tests proving ajv 8 compiles both schemas, resolves $ref from scenario→entity, validates correct objects, rejects invalid ones
+- tsc --noEmit: clean; vitest: 39/39 pass
+- PRD item now passing: "JSON Schema contract files committed to repo as single source of truth"
