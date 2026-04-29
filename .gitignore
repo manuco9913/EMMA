@@ -38,3 +38,6 @@ desktop.ini
 *.swo
 *.orig
 .idea/
+
+# Playwright MCP runtime output
+.playwright-mcp/
