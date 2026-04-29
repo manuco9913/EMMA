@@ -28,3 +28,13 @@ Next: Implement scenario form fields rendered from JSON Schema ("Scenario form f
 - tsc --noEmit: clean; vitest: 23/23 pass
 
 Next: Implement entity management ("User can add between 2 and 10 entities to a scenario") — entity accordion/list inside ScenarioPanel, each entity rendered via SchemaFormRenderer with entity schema from /api/schema/entity
+
+2026-04-29: Implemented entity management (add/remove accordion list) and extended SchemaFormRenderer for entity field types.
+- Created src/EntityList.tsx: uses useFieldArray (react-hook-form) with name 'entities'; fetches entity schema from /api/schema/entity via useSchema; renders collapsible accordion per entity; "Add Entity" button disabled at 10; Remove button per entity; warning shown when entity count is 1 (minimum 2 required to run)
+- Extended src/SchemaFormRenderer.tsx: added CoordinateField component (renders lat/lon pair side-by-side from object schema with x-ui-component: "coordinate"); added NumericOrFileField component (toggle between number input and file-path text input for x-ui-component: "numeric-or-file"); both check uiComponent before type-based checks in renderField
+- Updated src/ScenarioPanel.tsx: renders EntityList inside the scenario form, passing control and watch from the parent useForm
+- PRD items now passing: "User can add between 2 and 10 entities", "Entity form fields rendered from entity JSON Schema", "Numeric fields display a unit suffix", "numeric-or-file fields allow toggling"
+- Also marked SliceParser PRD item as passing (6 unit tests were already green, PRD just hadn't been updated)
+- tsc --noEmit: clean; vitest: 23/23 pass
+
+Next: Implement entity map placement ("User can place an entity by clicking on the map") — onClick handler on MapLibre map emits lat/lon to the active entity's position fields; needs Zustand store or callback to bridge Map and EntityList

@@ -94,7 +94,7 @@
       "Continue adding entities up to 10 and verify all are accepted",
       "Attempt to add an 11th entity and verify the UI prevents it"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -106,7 +106,7 @@
       "Confirm the new field appears in the entity form without a frontend rebuild",
       "Verify no entity field definitions are hardcoded in frontend source code"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -178,7 +178,7 @@
       "Verify 'm' or 'km' is displayed next to applicable distance fields",
       "Confirm unit suffixes are display-only and not included in the submitted form value"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -202,7 +202,7 @@
       "Verify a file path input is displayed in place of the numeric input",
       "Toggle back to numeric mode and verify the numeric input is restored"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -394,7 +394,7 @@
       "Run unit tests with wrong magic bytes and verify a typed SliceParseError is thrown",
       "Run unit tests with a truncated buffer and a zero-size grid and verify errors are thrown correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "developer",

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Control, Controller, UseFormWatch } from 'react-hook-form'
 import { evaluateShowIf } from './evaluateShowIf'
 import type { JSONSchema } from './useSchema'
@@ -37,6 +38,136 @@ function Field({ children }: { children: React.ReactNode }) {
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>{children}</div>
 }
 
+function NumericOrFileField({
+  fieldKey,
+  title,
+  unit,
+  control,
+}: {
+  fieldKey: string
+  title: string
+  unit?: string
+  control: AnyControl
+}) {
+  const [mode, setMode] = useState<'number' | 'file'>('number')
+  return (
+    <Field>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Label text={title} unit={unit} />
+        <button
+          type="button"
+          onClick={() => setMode(m => (m === 'number' ? 'file' : 'number'))}
+          style={{
+            fontSize: 10,
+            padding: '2px 6px',
+            border: '1px solid #bbb',
+            borderRadius: 3,
+            background: '#f0f0f0',
+            cursor: 'pointer',
+          }}
+        >
+          {mode === 'number' ? 'Use file' : 'Use value'}
+        </button>
+      </div>
+      <Controller
+        name={fieldKey}
+        control={control}
+        render={({ field }) =>
+          mode === 'number' ? (
+            <input
+              type="number"
+              style={input}
+              step="any"
+              value={typeof field.value === 'number' ? field.value : ''}
+              onChange={e => field.onChange(e.target.valueAsNumber)}
+              onBlur={field.onBlur}
+              name={field.name}
+              ref={field.ref}
+            />
+          ) : (
+            <input
+              type="text"
+              placeholder="File path…"
+              style={input}
+              value={typeof field.value === 'string' ? field.value : ''}
+              onChange={e => field.onChange(e.target.value)}
+              onBlur={field.onBlur}
+              name={field.name}
+              ref={field.ref}
+            />
+          )
+        }
+      />
+    </Field>
+  )
+}
+
+function CoordinateField({
+  fieldKey,
+  title,
+  schema,
+  control,
+}: {
+  fieldKey: string
+  title: string
+  schema: JSONSchema
+  control: AnyControl
+}) {
+  const latSchema = schema.properties?.lat
+  const lonSchema = schema.properties?.lon
+  return (
+    <Field>
+      <Label text={title} />
+      <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Label text="Lat" />
+          <Controller
+            name={`${fieldKey}.lat`}
+            control={control}
+            render={({ field }) => (
+              <input
+                type="number"
+                placeholder="Latitude"
+                style={input}
+                min={latSchema?.minimum}
+                max={latSchema?.maximum}
+                step="any"
+                value={field.value as number ?? ''}
+                onChange={e => field.onChange(e.target.valueAsNumber)}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
+              />
+            )}
+          />
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Label text="Lon" />
+          <Controller
+            name={`${fieldKey}.lon`}
+            control={control}
+            render={({ field }) => (
+              <input
+                type="number"
+                placeholder="Longitude"
+                style={input}
+                min={lonSchema?.minimum}
+                max={lonSchema?.maximum}
+                step="any"
+                value={field.value as number ?? ''}
+                onChange={e => field.onChange(e.target.valueAsNumber)}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
+              />
+            )}
+          />
+        </div>
+      </div>
+    </Field>
+  )
+}
+
 function renderField(
   key: string,
   fieldKey: string,
@@ -46,6 +177,18 @@ function renderField(
   const unit = schema['x-unit']
   const uiComponent = schema['x-ui-component']
   const title = schema.title ?? key
+
+  if (uiComponent === 'coordinate') {
+    return (
+      <CoordinateField key={fieldKey} fieldKey={fieldKey} title={title} schema={schema} control={control} />
+    )
+  }
+
+  if (uiComponent === 'numeric-or-file') {
+    return (
+      <NumericOrFileField key={fieldKey} fieldKey={fieldKey} title={title} unit={unit} control={control} />
+    )
+  }
 
   if (uiComponent === 'range') {
     return (

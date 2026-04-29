@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { useSchema } from './useSchema'
 import { SchemaFormRenderer } from './SchemaFormRenderer'
+import { EntityList } from './EntityList'
 
 const SCHEMA_URL = '/api/schema/scenario'
 
@@ -48,6 +49,7 @@ export function ScenarioPanel() {
           style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
         >
           <SchemaFormRenderer schema={schema} control={control} watch={watch} />
+          <EntityList control={control} watch={watch} />
           <button
             type="submit"
             style={{
