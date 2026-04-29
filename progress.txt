@@ -16,3 +16,15 @@ Next: Implement left-sidebar layout ("Scenario panel is displayed in a left side
 - tsc --noEmit: clean; vitest: 6/6 pass
 
 Next: Implement scenario form fields rendered from JSON Schema ("Scenario form fields are rendered from the JSON Schema served by the backend at runtime")
+
+2026-04-29: Implemented schema-driven scenario form (SchemaFormRenderer + evaluateShowIf).
+- Created src/evaluateShowIf.ts: pure function, accepts ShowIfCondition + values Record, returns boolean; supports all 6 ops (eq/neq/gt/gte/lt/lte), and/or chaining, dot-notation nested paths, missing-field guard
+- Created src/evaluateShowIf.test.ts: 17 unit tests, all pass in node environment with no DOM/React/form imports
+- Created src/useSchema.ts: React hook that fetches a JSON Schema from a given endpoint; exports JSONSchema type
+- Created src/SchemaFormRenderer.tsx: renders form fields from JSONSchema.properties using react-hook-form Controller; supports string/number/boolean/enum/x-ui-component:range; unit suffixes (x-unit); x-show-if conditions via evaluateShowIf; array fields (entities) are skipped for separate feature
+- Updated src/ScenarioPanel.tsx: fetches scenario schema from /api/schema/scenario; renders SchemaFormRenderer; no hardcoded field names
+- Updated vite.config.ts: added /api → http://localhost:8000 proxy
+- PRD items now passing: "Scenario form fields are rendered from the JSON Schema served by the backend at runtime" + "evaluateShowIf is a pure function with no side effects, unit testable without DOM or form context"
+- tsc --noEmit: clean; vitest: 23/23 pass
+
+Next: Implement entity management ("User can add between 2 and 10 entities to a scenario") — entity accordion/list inside ScenarioPanel, each entity rendered via SchemaFormRenderer with entity schema from /api/schema/entity

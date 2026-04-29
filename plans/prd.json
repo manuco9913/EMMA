@@ -82,7 +82,7 @@
       "Confirm the new field appears in the form without a frontend rebuild",
       "Verify no scenario field definitions are hardcoded in frontend source code"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -382,7 +382,7 @@
       "Run unit tests covering and/or operators, all six ops (eq, neq, gt, gte, lt, lte), missing fields, and nested objects",
       "Verify tests pass without any DOM, React, or form framework imports"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "developer",
