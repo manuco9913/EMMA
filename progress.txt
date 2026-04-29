@@ -75,3 +75,11 @@ Next: TBD
 - Created src/contracts.test.ts: 10 tests proving ajv 8 compiles both schemas, resolves $ref from scenario→entity, validates correct objects, rejects invalid ones
 - tsc --noEmit: clean; vitest: 39/39 pass
 - PRD item now passing: "JSON Schema contract files committed to repo as single source of truth"
+
+2026-04-30: Implemented JSON Schema contract verification (ajv 8 + C# NJsonSchema skeleton).
+- Created frontend/src/contracts.test.ts: 10 tests; loads entity.schema.json + scenario.schema.json from /contracts/ via Node fs; uses ajv 8 (strict:false for x- extension keywords); tests draft-07 $schema, x- extension presence, compile-without-throw, $ref resolution, valid entity passes, missing-field entity fails, valid scenario (2 entities) passes, single-entity scenario fails minItems:2
+- Created backend-csharp/WaveSim.Contracts.Tests/WaveSim.Contracts.Tests.csproj: xunit + NJsonSchema 11.1.0, net8.0
+- Created backend-csharp/WaveSim.Contracts.Tests/SchemaResolutionTests.cs: 6 tests loading schemas from /contracts/ via NJsonSchema.JsonSchema.FromFileAsync; validates entity, invalid entity, scenario $ref resolution
+- No field definitions duplicated in frontend or backend: Python backend reads files directly; frontend fetches via /api/schema/*; C# would load same files
+- tsc --noEmit: clean; vitest: 39/39 pass (10 new)
+- PRD item confirmed passing: "JSON Schema contract files committed to repo as single source of truth"
