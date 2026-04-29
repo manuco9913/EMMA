@@ -25,6 +25,7 @@ export type EntityListProps = {
 
 type EntityValue = {
   position?: { lat?: number; lon?: number }
+  radius?: number
   [key: string]: unknown
 }
 
@@ -33,7 +34,7 @@ export function EntityList({ control, watch, setValue }: EntityListProps) {
   const { fields, append, remove } = useFieldArray({ control, name: 'entities' })
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
-  const { setActiveEntityIndex, setEntityPositions, registerApplyPosition } = useMapStore()
+  const { setActiveEntityIndex, setEntityPositions, setEntityRadii, registerApplyPosition } = useMapStore()
   const activeEntityIndex = useMapStore(s => s.activeEntityIndex)
 
   // Register the callback that lets the map update form position fields
@@ -45,16 +46,21 @@ export function EntityList({ control, watch, setValue }: EntityListProps) {
     return () => registerApplyPosition(null)
   }, [setValue, registerApplyPosition])
 
-  // Watch entity positions and sync to map store
+  // Watch entity data and sync positions + radii to map store
   const entities = useWatch({ control, name: 'entities' }) as EntityValue[] | undefined
   useEffect(() => {
-    const positions = (entities ?? []).map(e =>
+    const arr = entities ?? []
+    const positions = arr.map(e =>
       typeof e?.position?.lat === 'number' && typeof e?.position?.lon === 'number'
         ? { lat: e.position.lat, lon: e.position.lon }
         : null
     )
+    const radii = arr.map(e =>
+      typeof e?.radius === 'number' && e.radius > 0 ? e.radius : null
+    )
     setEntityPositions(positions)
-  }, [entities, setEntityPositions])
+    setEntityRadii(radii)
+  }, [entities, setEntityPositions, setEntityRadii])
 
   const toggleExpanded = (index: number) => {
     const isCurrentlyExpanded = expanded.has(index)

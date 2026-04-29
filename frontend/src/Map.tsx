@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from 'pmtiles'
 import { useMapStore } from './mapStore'
+import { circleGeoJSON } from './circleGeoJSON'
 
 const protocol = new Protocol()
 maplibregl.addProtocol('pmtiles', protocol.tile.bind(protocol))
@@ -34,8 +35,10 @@ export function MapComponent() {
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<(maplibregl.Marker | null)[]>([])
   const draggingRef = useRef<boolean[]>([])
+  const circleCountRef = useRef(0)
+  const [mapReady, setMapReady] = useState(false)
 
-  const { entityPositions, applyPositionToForm } = useMapStore()
+  const { entityPositions, entityRadii, applyPositionToForm } = useMapStore()
 
   // Stable refs so event handlers never capture stale values
   const applyPositionRef = useRef(applyPositionToForm)
@@ -58,6 +61,8 @@ export function MapComponent() {
     })
 
     mapRef.current.addControl(new maplibregl.NavigationControl())
+
+    mapRef.current.on('load', () => setMapReady(true))
 
     mapRef.current.on('click', e => {
       const idx = activeEntityIndexRef.current
@@ -121,6 +126,46 @@ export function MapComponent() {
       }
     })
   }, [entityPositions])
+
+  // Sync GeoJSON circle fill layers to entityPositions + entityRadii
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapReady) return
+
+    const count = Math.max(entityPositions.length, circleCountRef.current)
+
+    for (let i = 0; i < count; i++) {
+      const sourceId = `circle-source-${i}`
+      const layerId = `circle-fill-${i}`
+      const pos = entityPositions[i]
+      const radius = entityRadii[i]
+
+      if (!pos || !radius) {
+        if (map.getLayer(layerId)) map.removeLayer(layerId)
+        if (map.getSource(sourceId)) map.removeSource(sourceId)
+        continue
+      }
+
+      const geo = circleGeoJSON(pos, radius)
+
+      if (map.getSource(sourceId)) {
+        ;(map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(geo)
+      } else {
+        map.addSource(sourceId, { type: 'geojson', data: geo })
+        map.addLayer({
+          id: layerId,
+          type: 'fill',
+          source: sourceId,
+          paint: {
+            'fill-color': '#1a6ef5',
+            'fill-opacity': 0.25,
+          },
+        })
+      }
+    }
+
+    circleCountRef.current = entityPositions.length
+  }, [entityPositions, entityRadii, mapReady])
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 }

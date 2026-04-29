@@ -48,3 +48,14 @@ Next: Implement entity map placement ("User can place an entity by clicking on t
 - tsc --noEmit: clean; vitest: 23/23 pass
 
 Next: Implement radius circles ("Each entity's radius is visualized as a filled circle on the map") — GeoJSON fill layer on the MapLibre map, centered on entity position, scaled to radius field value (km), updated in real time as radius changes
+
+2026-04-29: Implemented radius circles as GeoJSON fill layers on the map.
+- Created src/circleGeoJSON.ts: pure fn, destination-point formula, returns closed GeoJSON Polygon Feature; 64 segments default
+- Created src/circleGeoJSON.test.ts: 6 unit tests (valid GeoJSON shape, closed ring, segment count, all vertices ~radiusKm from center, equator case, default segments); all green
+- Extended mapStore.ts: added entityRadii:(number|null)[] + setEntityRadii
+- Updated EntityList.tsx: watches entities.*.radius, syncs to store alongside positions
+- Updated Map.tsx: added mapReady state (triggered by map 'load' event); circle sync effect adds/updates/removes GeoJSON sources + fill layers per entity; uses setData for updates, removes layer+source when entity removed or radius cleared
+- PRD items now passing: "Each entity's radius is visualized as a filled circle on the map" + "Radius circle updates in real time as the radius field value changes"
+- tsc --noEmit: clean; vitest: 29/29 pass
+
+Next: TBD

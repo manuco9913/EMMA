@@ -154,7 +154,7 @@
       "Verify circle radii are correctly scaled to match the entity's radius field value",
       "Confirm circles are rendered as a GeoJSON fill layer"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -166,7 +166,7 @@
       "Change the radius field value to a smaller number",
       "Verify the circle on the map immediately shrinks"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
