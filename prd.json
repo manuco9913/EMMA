@@ -1,6 +1,19 @@
 [
   {
     "category": "developer",
+    "description": "Bootstrap: project is scaffolded, dependencies installed, dev server and backend are running, and all required static assets are in place",
+    "steps": [
+      "Verify frontend/ directory exists with src/, public/tiles/, and contracts/ subdirectories",
+      "Run npm install inside frontend/ and confirm it exits 0 with all required packages present (maplibre-gl, deck.gl, react-hook-form, zustand, ajv, msw)",
+      "Run tsc --noEmit inside frontend/ and confirm it exits 0 with no type errors",
+      "Start the Vite dev server and confirm it serves the app at localhost:5173 without errors",
+      "Confirm the FastAPI backend is running and GET /api/schema/scenario returns HTTP 200",
+      "Verify frontend/public/tiles/tiles.pmtiles exists on disk"
+    ],
+    "passes": false
+  },
+  {
+    "category": "developer",
     "description": "JSON Schema contract files committed to repo as single source of truth",
     "steps": [
       "Verify /contracts/entity.schema.json exists in the repository",
