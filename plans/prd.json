@@ -34,7 +34,7 @@
       "Verify HTTP status codes are documented for each endpoint",
       "Confirm the binary slice wire format (56-byte header + Float32Array) is fully specified"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

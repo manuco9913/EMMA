@@ -83,3 +83,9 @@ Next: TBD
 - No field definitions duplicated in frontend or backend: Python backend reads files directly; frontend fetches via /api/schema/*; C# would load same files
 - tsc --noEmit: clean; vitest: 39/39 pass (10 new)
 - PRD item confirmed passing: "JSON Schema contract files committed to repo as single source of truth"
+
+2026-04-30: Verified API contract file (contracts/api.md already complete); added 27 programmatic tests.
+- contracts/api.md already had all 7 endpoints, all status codes (200/201/204/404/409/422), and full 56-byte binary wire format spec
+- Created src/apiContract.test.ts: 27 tests reading api.md via Node fs; verifies file non-empty, all REST endpoints present, all status codes present, 56-byte header, Float32Array, all wire field names (magic/version/width/height/min_val/max_val/west/south/east/north/reserved)
+- tsc --noEmit: clean; vitest: 66/66 pass
+- PRD item now passing: "API contract file defines all endpoint signatures, request/response shapes, and binary slice wire format"
