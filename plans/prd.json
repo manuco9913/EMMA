@@ -118,7 +118,7 @@
       "Confirm the entity's lat/lon fields in the form update to match the clicked coordinates",
       "Click a different map location and verify the marker and form fields update accordingly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -130,7 +130,7 @@
       "Release the marker and confirm it stays at the new position",
       "Verify the entity's lat/lon form fields update to the new coordinates after the drag"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -142,7 +142,7 @@
       "Drag the marker to a new position and verify the lat/lon form fields update",
       "Confirm neither input method causes an infinite update loop"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

@@ -38,3 +38,13 @@ Next: Implement entity management ("User can add between 2 and 10 entities to a 
 - tsc --noEmit: clean; vitest: 23/23 pass
 
 Next: Implement entity map placement ("User can place an entity by clicking on the map") — onClick handler on MapLibre map emits lat/lon to the active entity's position fields; needs Zustand store or callback to bridge Map and EntityList
+
+2026-04-29: Implemented entity map placement with draggable markers and bidirectional lat/lon sync.
+- Created src/mapStore.ts: Zustand store bridging Map ↔ EntityList; holds activeEntityIndex, entityPositions array, and applyPositionToForm callback
+- Updated src/Map.tsx: map click handler (reads activeEntityIndex from store via ref, calls applyPositionToForm on click); draggable maplibregl.Marker instances per entity; markers created on first position, updated via setLngLat on position change (EPSILON guard prevents unnecessary updates); isDragging flag prevents form-triggered setLngLat from interfering with active drags; marker click stopPropagation prevents click from also triggering the map click handler; stable ref pattern (applyPositionRef, activeEntityIndexRef) avoids stale closures in event handlers
+- Updated src/EntityList.tsx: accepts setValue prop; registers applyPositionToForm with store (calls setValue('entities.N.position', {lat,lon})); watches entities via useWatch and syncs positions array to store on every change; active entity (blue border + "← click map to place" hint) is the last-opened accordion item; opening sets active, closing clears it; remove() correctly adjusts activeEntityIndex when lower-indexed entity is deleted
+- Updated src/ScenarioPanel.tsx: destructures setValue from useForm and passes to EntityList
+- PRD items now passing: "User can place an entity by clicking on the map", "User can drag an entity marker to update its position", "Lat/lon coordinate fields stay in bidirectional sync with the map marker"
+- tsc --noEmit: clean; vitest: 23/23 pass
+
+Next: Implement radius circles ("Each entity's radius is visualized as a filled circle on the map") — GeoJSON fill layer on the MapLibre map, centered on entity position, scaled to radius field value (km), updated in real time as radius changes

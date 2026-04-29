@@ -7,7 +7,7 @@ const SCHEMA_URL = '/api/schema/scenario'
 
 export function ScenarioPanel() {
   const { schema, loading, error } = useSchema(SCHEMA_URL)
-  const { control, watch, handleSubmit } = useForm<Record<string, unknown>>({
+  const { control, watch, setValue, handleSubmit } = useForm<Record<string, unknown>>({
     defaultValues: {},
   })
 
@@ -49,7 +49,7 @@ export function ScenarioPanel() {
           style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
         >
           <SchemaFormRenderer schema={schema} control={control} watch={watch} />
-          <EntityList control={control} watch={watch} />
+          <EntityList control={control} watch={watch} setValue={setValue} />
           <button
             type="submit"
             style={{
