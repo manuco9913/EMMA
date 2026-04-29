@@ -8,3 +8,11 @@
 - tsc --noEmit: clean; vitest: 6/6 pass
 
 Next: Implement left-sidebar layout ("Scenario panel is displayed in a left sidebar alongside the map")
+
+2026-04-29: Implemented left-sidebar layout with ScenarioPanel component.
+- Created src/ScenarioPanel.tsx: fixed-width (320px) aside element, full-height, scrollable, with grey background
+- Updated src/App.tsx: flexbox row layout — ScenarioPanel on left, MapComponent fills remaining width (flex:1 with minWidth:0)
+- PRD item now passing: "Scenario panel is displayed in a left sidebar alongside the map"
+- tsc --noEmit: clean; vitest: 6/6 pass
+
+Next: Implement scenario form fields rendered from JSON Schema ("Scenario form fields are rendered from the JSON Schema served by the backend at runtime")

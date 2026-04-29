@@ -70,7 +70,7 @@
       "Scroll or interact with the scenario panel and verify the map remains visible",
       "Check that the sidebar is full height"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
