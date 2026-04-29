@@ -9,10 +9,16 @@ build/
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
 .venv/
 venv/
 env/
 *.pth
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
 
 # Environment variables
 .env
