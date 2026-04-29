@@ -41,6 +41,8 @@ export function MapComponent() {
       zoom: DEFAULT_ZOOM,
     })
 
+    mapRef.current.addControl(new maplibregl.NavigationControl())
+
     return () => {
       mapRef.current?.remove()
       mapRef.current = null
