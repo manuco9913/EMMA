@@ -59,3 +59,11 @@ Next: Implement radius circles ("Each entity's radius is visualized as a filled 
 - tsc --noEmit: clean; vitest: 29/29 pass
 
 Next: TBD
+
+2026-04-29: Verified bootstrap feature (all steps already in place).
+- frontend/src/, public/tiles/, contracts/ all exist; tiles.pmtiles present
+- npm install exits 0; all required pkgs present (maplibre-gl, deck.gl, react-hook-form, zustand, ajv, msw)
+- tsc --noEmit: clean; vitest: 29/29 pass
+- Vite dev server confirmed running at localhost:5173
+- FastAPI backend confirmed running; GET /api/schema/scenario returns 200 with JSON schema
+- PRD item now passing: "Bootstrap: project is scaffolded, dependencies installed, dev server and backend are running, and all required static assets are in place"

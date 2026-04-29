@@ -10,7 +10,7 @@
       "Confirm the FastAPI backend is running and GET /api/schema/scenario returns HTTP 200",
       "Verify frontend/public/tiles/tiles.pmtiles exists on disk"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "developer",
