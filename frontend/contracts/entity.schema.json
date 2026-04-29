@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "entity",
+  "title": "Entity",
+  "description": "A single emitter entity within a scenario.",
+  "type": "object",
+  "required": ["label", "position", "frequency", "power", "azimuth", "antenna_height", "radius"],
+  "additionalProperties": false,
+  "properties": {
+    "label": {
+      "type": "string",
+      "title": "Label"
+    },
+    "position": {
+      "type": "object",
+      "title": "Position",
+      "x-ui-component": "coordinate",
+      "required": ["lat", "lon"],
+      "additionalProperties": false,
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      }
+    },
+    "frequency": {
+      "type": "number",
+      "title": "Frequency",
+      "x-unit": "MHz"
+    },
+    "power": {
+      "title": "Power",
+      "x-ui-component": "numeric-or-file",
+      "x-unit": "dBm",
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string", "minLength": 1 }
+      ]
+    },
+    "azimuth": {
+      "type": "number",
+      "title": "Azimuth",
+      "minimum": 0,
+      "maximum": 360,
+      "x-unit": "°"
+    },
+    "antenna_height": {
+      "type": "number",
+      "title": "Antenna Height",
+      "minimum": 0,
+      "x-unit": "m"
+    },
+    "radius": {
+      "type": "number",
+      "title": "Radius",
+      "minimum": 0.1,
+      "x-unit": "km"
+    }
+  }
+}

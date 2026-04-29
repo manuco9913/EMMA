@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "scenario",
+  "title": "Scenario",
+  "description": "A wave propagation scenario with one or more entities.",
+  "type": "object",
+  "required": [
+    "name",
+    "height_range",
+    "height_step",
+    "angular_resolution",
+    "grid_cell_size",
+    "terrain_enabled",
+    "combination_method",
+    "entities"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Name",
+      "minLength": 1
+    },
+    "height_range": {
+      "type": "object",
+      "title": "Height Range",
+      "x-ui-component": "range",
+      "x-unit": "m",
+      "required": ["min", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" }
+      }
+    },
+    "height_step": {
+      "type": "number",
+      "title": "Height Step",
+      "minimum": 1,
+      "x-unit": "m"
+    },
+    "angular_resolution": {
+      "type": "number",
+      "title": "Angular Resolution",
+      "minimum": 0.01,
+      "maximum": 2.0,
+      "default": 0.1,
+      "x-unit": "°"
+    },
+    "grid_cell_size": {
+      "type": "number",
+      "title": "Grid Cell Size",
+      "minimum": 1,
+      "default": 100,
+      "x-unit": "m"
+    },
+    "terrain_enabled": {
+      "type": "boolean",
+      "title": "Terrain Enabled",
+      "default": true
+    },
+    "combination_method": {
+      "type": "string",
+      "title": "Combination Method",
+      "enum": ["max", "mean", "sum"],
+      "default": "max"
+    },
+    "entities": {
+      "type": "array",
+      "title": "Entities",
+      "minItems": 2,
+      "maxItems": 10,
+      "items": {
+        "$ref": "entity"
+      }
+    }
+  }
+}
