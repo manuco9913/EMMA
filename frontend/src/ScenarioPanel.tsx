@@ -9,6 +9,7 @@ export function ScenarioPanel() {
   const { schema, loading, error } = useSchema(SCHEMA_URL)
   const { control, watch, setValue, handleSubmit } = useForm<Record<string, unknown>>({
     defaultValues: {},
+    mode: 'onBlur',
   })
 
   const onSubmit = (data: Record<string, unknown>) => {

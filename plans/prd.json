@@ -214,7 +214,7 @@
       "Submit the form with one or more invalid fields",
       "Verify all invalid fields show errors and submission is blocked"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

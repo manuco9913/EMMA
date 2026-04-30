@@ -102,3 +102,9 @@ Next: TBD
 - SchemaFormRenderer.test.tsx: added ValidationWrapper (mode:'onBlur') + 5 validation tests: blur-empty→"Must be a number", error-clears-on-valid, min constraint error, max constraint error, submit blocked + errors shown
 - tsc --noEmit: clean; vitest: 79/79 pass
 - PRD item now passing: "Form validation runs on blur and on submit, enforcing type checks and min/max constraints"
+
+2026-04-30: Form validation on blur and submit with type checks and min/max constraints.
+- SchemaFormRenderer: added numericRules() with validate.isNumber (NaN check), validate.min, validate.max; error msg via fieldState.error in Controller render (ErrorMsg span, red 11px)
+- ScenarioPanel: mode:onBlur added to useForm
+- 5 new vitest tests (describe validation): blur empty->error, fix->error clears, below min->error, above max->error, submit invalid->blocked; tsc clean; 79/79 pass
+- PRD item now passing: "Form validation runs on blur and on submit, enforcing type checks and min/max constraints"
