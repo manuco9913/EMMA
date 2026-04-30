@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, fireEvent, cleanup } from '@testing-library/react'
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
 import { useForm } from 'react-hook-form'
 import { SchemaFormRenderer } from './SchemaFormRenderer'
 import type { JSONSchema } from './useSchema'
@@ -91,5 +91,86 @@ describe('SchemaFormRenderer', () => {
     }
     render(<Wrapper schema={minimalSchema} defaultValues={{}} />)
     expect(screen.getByText('Custom Field')).toBeTruthy()
+  })
+})
+
+const numericSchema: JSONSchema = {
+  type: 'object',
+  properties: {
+    count: { type: 'number', title: 'Count', minimum: 0, maximum: 100 },
+  },
+}
+
+function ValidationWrapper({
+  schema,
+  defaultValues = {},
+  onSubmit: externalSubmit,
+}: {
+  schema: JSONSchema
+  defaultValues?: Record<string, unknown>
+  onSubmit?: () => void
+}) {
+  const { control, watch, handleSubmit } = useForm({
+    defaultValues,
+    mode: 'onBlur',
+  })
+  return (
+    <form onSubmit={handleSubmit(externalSubmit ?? (() => {}))}>
+      <SchemaFormRenderer schema={schema} control={control} watch={watch} />
+      <button type="submit">Submit</button>
+    </form>
+  )
+}
+
+describe('validation', () => {
+  it('shows "Must be a number" on blur when number field is empty', async () => {
+    render(<ValidationWrapper schema={numericSchema} />)
+    const input = document.querySelector('input[type="number"]') as HTMLInputElement
+    fireEvent.blur(input)
+    await waitFor(() => {
+      expect(screen.getByText('Must be a number')).toBeTruthy()
+    })
+  })
+
+  it('clears error when valid value is entered after invalid blur', async () => {
+    render(<ValidationWrapper schema={numericSchema} />)
+    const input = document.querySelector('input[type="number"]') as HTMLInputElement
+    fireEvent.blur(input)
+    await waitFor(() => expect(screen.getByText('Must be a number')).toBeTruthy())
+
+    fireEvent.change(input, { target: { valueAsNumber: 50 } })
+    fireEvent.blur(input)
+    await waitFor(() => expect(screen.queryByText('Must be a number')).toBeNull())
+  })
+
+  it('shows minimum constraint error when value is below minimum', async () => {
+    render(<ValidationWrapper schema={numericSchema} />)
+    const input = document.querySelector('input[type="number"]') as HTMLInputElement
+    fireEvent.change(input, { target: { valueAsNumber: -5 } })
+    fireEvent.blur(input)
+    await waitFor(() => {
+      expect(screen.getByText('Minimum value is 0')).toBeTruthy()
+    })
+  })
+
+  it('shows maximum constraint error when value is above maximum', async () => {
+    render(<ValidationWrapper schema={numericSchema} />)
+    const input = document.querySelector('input[type="number"]') as HTMLInputElement
+    fireEvent.change(input, { target: { valueAsNumber: 150 } })
+    fireEvent.blur(input)
+    await waitFor(() => {
+      expect(screen.getByText('Maximum value is 100')).toBeTruthy()
+    })
+  })
+
+  it('blocks submission and shows errors when number field is invalid', async () => {
+    const mockSubmit = vi.fn()
+    render(<ValidationWrapper schema={numericSchema} onSubmit={mockSubmit} />)
+    const submitBtn = screen.getByRole('button', { name: /submit/i })
+    fireEvent.click(submitBtn)
+    await waitFor(() => {
+      expect(screen.getByText('Must be a number')).toBeTruthy()
+    })
+    expect(mockSubmit).not.toHaveBeenCalled()
   })
 })

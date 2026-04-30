@@ -38,6 +38,11 @@ function Field({ children }: { children: React.ReactNode }) {
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>{children}</div>
 }
 
+function ErrorMsg({ message }: { message?: string }) {
+  if (!message) return null
+  return <span style={{ fontSize: 11, color: '#c00' }}>{message}</span>
+}
+
 function NumericOrFileField({
   fieldKey,
   title,
@@ -168,6 +173,27 @@ function CoordinateField({
   )
 }
 
+function numericRules(schema: JSONSchema) {
+  return {
+    validate: {
+      isNumber: (v: unknown) => {
+        if (typeof v !== 'number' || isNaN(v as number)) return 'Must be a number'
+        return true
+      },
+      min: (v: unknown) => {
+        if (schema.minimum !== undefined && typeof v === 'number' && v < schema.minimum)
+          return `Minimum value is ${schema.minimum}`
+        return true
+      },
+      max: (v: unknown) => {
+        if (schema.maximum !== undefined && typeof v === 'number' && v > schema.maximum)
+          return `Maximum value is ${schema.maximum}`
+        return true
+      },
+    },
+  }
+}
+
 function renderField(
   key: string,
   fieldKey: string,
@@ -291,19 +317,23 @@ function renderField(
         <Controller
           name={fieldKey}
           control={control}
-          render={({ field }) => (
-            <input
-              type="number"
-              style={input}
-              min={schema.minimum}
-              max={schema.maximum}
-              step="any"
-              value={field.value as number ?? ''}
-              onChange={e => field.onChange(e.target.valueAsNumber)}
-              onBlur={field.onBlur}
-              name={field.name}
-              ref={field.ref}
-            />
+          rules={numericRules(schema)}
+          render={({ field, fieldState }) => (
+            <>
+              <input
+                type="number"
+                style={input}
+                min={schema.minimum}
+                max={schema.maximum}
+                step="any"
+                value={field.value as number ?? ''}
+                onChange={e => field.onChange(e.target.valueAsNumber)}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
+              />
+              <ErrorMsg message={fieldState.error?.message} />
+            </>
           )}
         />
       </Field>

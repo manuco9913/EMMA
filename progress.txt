@@ -95,3 +95,10 @@ Next: TBD
 - Uses // @vitest-environment jsdom; real useForm() from react-hook-form (no mocks); fixture schema with string/number/boolean/enum/conditional fields
 - tsc --noEmit: clean; vitest: 74/74 pass
 - PRD item now passing: "SchemaFormRenderer accepts a schema object and react-hook-form control as props, testable in isolation"
+
+2026-04-30: Implemented form validation on blur and submit (type checks + min/max constraints).
+- SchemaFormRenderer.tsx: added numericRules() helper (validate: isNumber/min/max), rules prop on number Controller, ErrorMsg shown via fieldState.error?.message
+- errors?: FieldErrors prop added to SchemaFormRendererProps (optional, unused in render — errors come from fieldState)
+- SchemaFormRenderer.test.tsx: added ValidationWrapper (mode:'onBlur') + 5 validation tests: blur-empty→"Must be a number", error-clears-on-valid, min constraint error, max constraint error, submit blocked + errors shown
+- tsc --noEmit: clean; vitest: 79/79 pass
+- PRD item now passing: "Form validation runs on blur and on submit, enforcing type checks and min/max constraints"
