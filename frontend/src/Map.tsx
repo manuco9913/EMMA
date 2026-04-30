@@ -3,6 +3,8 @@ import maplibregl from 'maplibre-gl'
 import { Protocol } from 'pmtiles'
 import { useMapStore } from './mapStore'
 import { circleGeoJSON } from './circleGeoJSON'
+import { HeatmapCustomLayer } from './heatmap/HeatmapCustomLayer'
+import { useSliceStore } from './heatmap/sliceStore'
 
 const protocol = new Protocol()
 maplibregl.addProtocol('pmtiles', protocol.tile.bind(protocol))
@@ -36,9 +38,11 @@ export function MapComponent() {
   const markersRef = useRef<(maplibregl.Marker | null)[]>([])
   const draggingRef = useRef<boolean[]>([])
   const circleCountRef = useRef(0)
+  const heatmapLayerRef = useRef<HeatmapCustomLayer | null>(null)
   const [mapReady, setMapReady] = useState(false)
 
   const { entityPositions, entityRadii, applyPositionToForm } = useMapStore()
+  const { sliceResult } = useSliceStore()
 
   // Stable refs so event handlers never capture stale values
   const applyPositionRef = useRef(applyPositionToForm)
@@ -62,7 +66,12 @@ export function MapComponent() {
 
     mapRef.current.addControl(new maplibregl.NavigationControl())
 
-    mapRef.current.on('load', () => setMapReady(true))
+    mapRef.current.on('load', () => {
+      const hl = new HeatmapCustomLayer()
+      heatmapLayerRef.current = hl
+      mapRef.current!.addLayer(hl)
+      setMapReady(true)
+    })
 
     mapRef.current.on('click', e => {
       const idx = activeEntityIndexRef.current
@@ -78,6 +87,13 @@ export function MapComponent() {
       mapRef.current = null
     }
   }, [])
+
+  // Push heatmap data into the custom layer whenever a new slice arrives or the map loads.
+  useEffect(() => {
+    if (!sliceResult || !mapReady || !heatmapLayerRef.current) return
+    heatmapLayerRef.current.setData(sliceResult)
+    mapRef.current?.triggerRepaint()
+  }, [sliceResult, mapReady])
 
   // Sync markers to entityPositions
   useEffect(() => {

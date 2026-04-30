@@ -3,6 +3,8 @@ import { useSchema } from './useSchema'
 import { SchemaFormRenderer } from './SchemaFormRenderer'
 import { EntityList } from './EntityList'
 import { useJobStore } from './jobStore'
+import { useSliceStore } from './heatmap/sliceStore'
+import { parseSlice } from './heatmap/SliceParser'
 
 const SCHEMA_URL = '/api/schema/scenario'
 
@@ -12,9 +14,10 @@ export function ScenarioPanel() {
     defaultValues: {},
     mode: 'onBlur',
   })
-  const { status, setSubmitting, setJobIds, setDone, setError } = useJobStore()
+  const { status, message, setSubmitting, setJobIds, setProgress, setDone, setError } = useJobStore()
 
   const onSubmit = async (data: Record<string, unknown>) => {
+    const defaultHeight = ((data.height_range as { min?: number } | undefined)?.min) ?? 0
     setSubmitting()
     try {
       const res = await fetch('/api/scenarios', {
@@ -26,7 +29,26 @@ export function ScenarioPanel() {
       const { scenario_id, job_id } = await res.json()
       setJobIds(scenario_id, job_id)
       const es = new EventSource(`/api/scenarios/${scenario_id}/jobs/${job_id}/events`)
-      es.addEventListener('done', () => { setDone(); es.close() })
+      es.addEventListener('progress', (e) => {
+        const payload = JSON.parse((e as MessageEvent).data) as { message?: string; percent?: number }
+        setProgress(payload.percent ?? 0, payload.message ?? '')
+      })
+      es.addEventListener('done', async (e) => {
+        const { run_id } = JSON.parse((e as MessageEvent).data) as { run_id: string }
+        setDone(run_id)
+        es.close()
+        try {
+          const sliceRes = await fetch(
+            `/api/scenarios/${scenario_id}/runs/${run_id}/slices/${defaultHeight}`,
+          )
+          if (sliceRes.ok) {
+            const buffer = await sliceRes.arrayBuffer()
+            useSliceStore.getState().setSlice(parseSlice(buffer))
+          }
+        } catch {
+          // Slice fetch failure is non-fatal; heatmap simply won't appear.
+        }
+      })
       es.addEventListener('error', () => { setError('Job failed'); es.close() })
     } catch (err) {
       setError(String(err))
@@ -53,7 +75,13 @@ export function ScenarioPanel() {
 
       {status !== 'idle' && (
         <div role="status" aria-live="polite" style={{ fontSize: 13, color: '#555' }}>
-          {status === 'submitting' ? 'Submitting…' : status === 'running' ? 'Running…' : status === 'done' ? 'Done' : 'Error'}
+          {status === 'submitting'
+            ? 'Submitting…'
+            : status === 'running'
+              ? `Running… ${message}`
+              : status === 'done'
+                ? 'Done'
+                : `Error: ${message}`}
         </div>
       )}
 
