@@ -190,7 +190,7 @@
       "Change the controlling field value to a non-triggering value",
       "Verify the conditional field is hidden"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

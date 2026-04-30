@@ -82,6 +82,16 @@ describe('SchemaFormRenderer', () => {
     expect(screen.getByText('Advanced Only')).toBeTruthy()
   })
 
+  it('hides a conditional field when controlling value changes back to non-triggering value', () => {
+    render(<Wrapper schema={fixtureSchema} defaultValues={{ mode: 'advanced' }} />)
+    expect(screen.getByText('Advanced Only')).toBeTruthy()
+
+    const select = screen.getByRole('combobox')
+    fireEvent.change(select, { target: { value: 'simple' } })
+
+    expect(screen.queryByText('Advanced Only')).toBeNull()
+  })
+
   it('accepts schema and control as props without hardcoded field names', () => {
     const minimalSchema: JSONSchema = {
       type: 'object',

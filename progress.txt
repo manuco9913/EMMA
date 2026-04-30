@@ -108,3 +108,8 @@ Next: TBD
 - ScenarioPanel: mode:onBlur added to useForm
 - 5 new vitest tests (describe validation): blur empty->error, fix->error clears, below min->error, above max->error, submit invalid->blocked; tsc clean; 79/79 pass
 - PRD item now passing: "Form validation runs on blur and on submit, enforcing type checks and min/max constraints"
+
+2026-04-30: x-show-if conditional field visibility (full round-trip).
+- evaluateShowIf.ts + SchemaFormRenderer x-show-if logic already in place
+- Added 1 new test: conditional field starts visible (mode=advanced), reverts to hidden when mode changed to simple; 80/80 pass, tsc clean
+- PRD item now passing: "Fields with x-show-if conditions hide or show dynamically based on other field values"
