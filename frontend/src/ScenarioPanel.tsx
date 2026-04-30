@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form'
 import { useSchema } from './useSchema'
 import { SchemaFormRenderer } from './SchemaFormRenderer'
 import { EntityList } from './EntityList'
+import { useJobStore } from './jobStore'
 
 const SCHEMA_URL = '/api/schema/scenario'
 
@@ -11,9 +12,25 @@ export function ScenarioPanel() {
     defaultValues: {},
     mode: 'onBlur',
   })
+  const { status, setSubmitting, setJobIds, setDone, setError } = useJobStore()
 
-  const onSubmit = (data: Record<string, unknown>) => {
-    console.log('scenario submit', data)
+  const onSubmit = async (data: Record<string, unknown>) => {
+    setSubmitting()
+    try {
+      const res = await fetch('/api/scenarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      const { scenario_id, job_id } = await res.json()
+      setJobIds(scenario_id, job_id)
+      const es = new EventSource(`/api/scenarios/${scenario_id}/jobs/${job_id}/events`)
+      es.addEventListener('done', () => { setDone(); es.close() })
+      es.addEventListener('error', () => { setError('Job failed'); es.close() })
+    } catch (err) {
+      setError(String(err))
+    }
   }
 
   return (
@@ -34,6 +51,12 @@ export function ScenarioPanel() {
     >
       <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Scenario</h2>
 
+      {status !== 'idle' && (
+        <div role="status" aria-live="polite" style={{ fontSize: 13, color: '#555' }}>
+          {status === 'submitting' ? 'Submitting…' : status === 'running' ? 'Running…' : status === 'done' ? 'Done' : 'Error'}
+        </div>
+      )}
+
       {loading && (
         <p style={{ margin: 0, color: '#888', fontSize: '13px' }}>Loading schema…</p>
       )}
@@ -53,6 +76,7 @@ export function ScenarioPanel() {
           <EntityList control={control} watch={watch} setValue={setValue} />
           <button
             type="submit"
+            disabled={status === 'submitting' || status === 'running'}
             style={{
               marginTop: 4,
               padding: '8px 0',
@@ -61,7 +85,7 @@ export function ScenarioPanel() {
               border: 'none',
               borderRadius: 4,
               fontSize: 13,
-              cursor: 'pointer',
+              cursor: status === 'submitting' || status === 'running' ? 'not-allowed' : 'pointer',
             }}
           >
             Run Scenario
