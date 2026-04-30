@@ -406,7 +406,7 @@
       "Assert the correct field renderers are mounted for each property in the fixture schema",
       "Verify x-show-if conditions hide and show fields correctly within the isolated test"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "developer",

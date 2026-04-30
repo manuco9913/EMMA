@@ -89,3 +89,9 @@ Next: TBD
 - Created src/apiContract.test.ts: 27 tests reading api.md via Node fs; verifies file non-empty, all REST endpoints present, all status codes present, 56-byte header, Float32Array, all wire field names (magic/version/width/height/min_val/max_val/west/south/east/north/reserved)
 - tsc --noEmit: clean; vitest: 66/66 pass
 - PRD item now passing: "API contract file defines all endpoint signatures, request/response shapes, and binary slice wire format"
+
+2026-04-30: SchemaFormRenderer tested in isolation via jsdom + @testing-library/react.
+- frontend/src/SchemaFormRenderer.test.tsx already existed with 8 tests covering: string/number/boolean/enum field rendering, x-show-if hide (condition false), x-show-if show (condition true), dynamic toggle via fireEvent.change, arbitrary schema with no hardcoded names
+- Uses // @vitest-environment jsdom; real useForm() from react-hook-form (no mocks); fixture schema with string/number/boolean/enum/conditional fields
+- tsc --noEmit: clean; vitest: 74/74 pass
+- PRD item now passing: "SchemaFormRenderer accepts a schema object and react-hook-form control as props, testable in isolation"
