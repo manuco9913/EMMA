@@ -9,11 +9,15 @@ type JobStore = {
   status: JobStatus
   progress: number
   message: string
+  heightMin: number
+  heightMax: number
+  heightStep: number
   setSubmitting: () => void
   setJobIds: (scenarioId: string, jobId: string) => void
   setProgress: (progress: number, message: string) => void
   setDone: (runId: string) => void
   setError: (message: string) => void
+  setHeightRange: (min: number, max: number, step: number) => void
   reset: () => void
 }
 
@@ -24,10 +28,14 @@ export const useJobStore = create<JobStore>(set => ({
   status: 'idle',
   progress: 0,
   message: '',
+  heightMin: 0,
+  heightMax: 0,
+  heightStep: 10,
   setSubmitting: () => set({ status: 'submitting', progress: 0, message: '' }),
   setJobIds: (scenarioId, jobId) => set({ scenarioId, jobId, status: 'running' }),
   setProgress: (progress, message) => set({ progress, message }),
   setDone: (runId) => set({ status: 'done', runId }),
   setError: (message) => set({ status: 'error', message }),
-  reset: () => set({ scenarioId: null, jobId: null, runId: null, status: 'idle', progress: 0, message: '' }),
+  setHeightRange: (heightMin, heightMax, heightStep) => set({ heightMin, heightMax, heightStep }),
+  reset: () => set({ scenarioId: null, jobId: null, runId: null, status: 'idle', progress: 0, message: '', heightMin: 0, heightMax: 0, heightStep: 10 }),
 }))

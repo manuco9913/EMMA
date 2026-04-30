@@ -14,10 +14,12 @@ export function ScenarioPanel() {
     defaultValues: {},
     mode: 'onBlur',
   })
-  const { status, message, setSubmitting, setJobIds, setProgress, setDone, setError } = useJobStore()
+  const { status, message, setSubmitting, setJobIds, setProgress, setDone, setError, setHeightRange } = useJobStore()
 
   const onSubmit = async (data: Record<string, unknown>) => {
-    const defaultHeight = ((data.height_range as { min?: number } | undefined)?.min) ?? 0
+    const heightRange = data.height_range as { min?: number; max?: number } | undefined
+    const defaultHeight = heightRange?.min ?? 0
+    setHeightRange(heightRange?.min ?? 0, heightRange?.max ?? 0, (data.height_step as number | undefined) ?? 10)
     setSubmitting()
     try {
       const res = await fetch('/api/scenarios', {
