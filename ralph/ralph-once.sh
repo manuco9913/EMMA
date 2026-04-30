@@ -1,6 +1,6 @@
 set -e
 
-pending=$(jq -c '[.[] | select(.passes == false)]' plans/prd.json)
+pending=$(node -e "const f=require('./plans/prd.json');console.log(JSON.stringify(f.filter(x=>!x.passes)))")
 recent=$(tail -n 50 progress.txt 2>/dev/null || echo "")
 
 # Step 1: cheap planning call — pick the next feature
@@ -8,6 +8,8 @@ feature=$(claude --permission-mode acceptEdits -p \
   "PENDING PRD FEATURES (JSON): $pending
 
 Pick the single highest-priority feature to implement next. Return ONLY the raw JSON object for that one feature, no commentary.")
+# Strip markdown code fences if the model wrapped the response
+feature=$(echo "$feature" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const m=s.match(/\{[\s\S]*\}/);console.log(m?m[0].trim():s.trim())})")
 
 echo "Selected feature: $feature"
 echo "--------------------------------"
