@@ -43,6 +43,79 @@ function ErrorMsg({ message }: { message?: string }) {
   return <span style={{ fontSize: 11, color: '#c00' }}>{message}</span>
 }
 
+function FileField({
+  fieldKey,
+  title,
+  control,
+}: {
+  fieldKey: string
+  title: string
+  control: AnyControl
+}) {
+  return (
+    <Field>
+      <Label text={title} />
+      <Controller
+        name={fieldKey}
+        control={control}
+        render={({ field }) => (
+          <input
+            type="text"
+            placeholder="File path…"
+            style={input}
+            value={typeof field.value === 'string' ? field.value : ''}
+            onChange={e => field.onChange(e.target.value)}
+            onBlur={field.onBlur}
+            name={field.name}
+            ref={field.ref}
+          />
+        )}
+      />
+    </Field>
+  )
+}
+
+function MatrixField({
+  fieldKey,
+  title,
+  schema,
+  control,
+}: {
+  fieldKey: string
+  title: string
+  schema: JSONSchema
+  control: AnyControl
+}) {
+  const rows = (schema['x-rows'] as number | undefined) ?? 2
+  const cols = (schema['x-cols'] as number | undefined) ?? 2
+  return (
+    <Field>
+      <Label text={title} />
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 4 }}>
+        {Array.from({ length: rows * cols }, (_, i) => (
+          <Controller
+            key={i}
+            name={`${fieldKey}.${i}`}
+            control={control}
+            render={({ field }) => (
+              <input
+                type="number"
+                style={{ ...input, padding: '4px 6px' }}
+                step="any"
+                value={typeof field.value === 'number' ? field.value : ''}
+                onChange={e => field.onChange(e.target.valueAsNumber)}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
+              />
+            )}
+          />
+        ))}
+      </div>
+    </Field>
+  )
+}
+
 function NumericOrFileField({
   fieldKey,
   title,
@@ -203,6 +276,18 @@ function renderField(
   const unit = schema['x-unit']
   const uiComponent = schema['x-ui-component']
   const title = schema.title ?? key
+
+  if (uiComponent === 'file') {
+    return (
+      <FileField key={fieldKey} fieldKey={fieldKey} title={title} control={control} />
+    )
+  }
+
+  if (uiComponent === 'matrix') {
+    return (
+      <MatrixField key={fieldKey} fieldKey={fieldKey} title={title} schema={schema} control={control} />
+    )
+  }
 
   if (uiComponent === 'coordinate') {
     return (
@@ -379,7 +464,9 @@ export function SchemaFormRenderer({
   return (
     <>
       {Object.entries(schema.properties)
-        .filter(([, fieldSchema]) => fieldSchema.type !== 'array')
+        .filter(([, fieldSchema]) =>
+          fieldSchema.type !== 'array' || fieldSchema['x-ui-component'] === 'matrix'
+        )
         .map(([key, fieldSchema]) => {
           const fieldKey = prefix ? `${prefix}.${key}` : key
           const showIf = fieldSchema['x-show-if']

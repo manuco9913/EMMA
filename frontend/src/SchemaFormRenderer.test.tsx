@@ -104,6 +104,70 @@ describe('SchemaFormRenderer', () => {
   })
 })
 
+describe('FileField', () => {
+  it('renders a text input for x-ui-component: file', () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        dataFile: { type: 'string', title: 'Data File', 'x-ui-component': 'file' },
+      },
+    }
+    render(<Wrapper schema={schema} defaultValues={{}} />)
+    expect(screen.getByText('Data File')).toBeTruthy()
+    const inputs = screen.getAllByRole('textbox')
+    expect(inputs.length).toBeGreaterThan(0)
+  })
+
+  it('accepts a file path string value', () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        dataFile: { type: 'string', title: 'Data File', 'x-ui-component': 'file' },
+      },
+    }
+    render(<Wrapper schema={schema} defaultValues={{ dataFile: '/data/terrain.tif' }} />)
+    const input = screen.getByRole('textbox') as HTMLInputElement
+    expect(input.value).toBe('/data/terrain.tif')
+  })
+})
+
+describe('MatrixField', () => {
+  it('renders a grid of number inputs for x-ui-component: matrix', () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        gain: {
+          type: 'array',
+          title: 'Gain Pattern',
+          'x-ui-component': 'matrix',
+          'x-rows': 2,
+          'x-cols': 3,
+        } as JSONSchema,
+      },
+    }
+    render(<Wrapper schema={schema} defaultValues={{}} />)
+    expect(screen.getByText('Gain Pattern')).toBeTruthy()
+    const inputs = document.querySelectorAll('input[type="number"]')
+    expect(inputs.length).toBe(6)
+  })
+
+  it('defaults to 2×2 when x-rows and x-cols are omitted', () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        mat: {
+          type: 'array',
+          title: 'Matrix',
+          'x-ui-component': 'matrix',
+        } as JSONSchema,
+      },
+    }
+    render(<Wrapper schema={schema} defaultValues={{}} />)
+    const inputs = document.querySelectorAll('input[type="number"]')
+    expect(inputs.length).toBe(4)
+  })
+})
+
 const numericSchema: JSONSchema = {
   type: 'object',
   properties: {
