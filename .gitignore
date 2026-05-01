@@ -42,3 +42,8 @@ desktop.ini
 # Playwright MCP runtime output
 .playwright-mcp/
 *.png
+!frontend/public/sprites/*.png
+
+# Large offline-map assets (download separately — see frontend/public/README.md)
+frontend/public/fonts/
+frontend/public/tiles/*.pmtiles

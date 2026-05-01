@@ -9,24 +9,7 @@ import { useSliceStore } from './heatmap/sliceStore'
 const protocol = new Protocol()
 maplibregl.addProtocol('pmtiles', protocol.tile.bind(protocol))
 
-const MAP_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    basemap: {
-      type: 'vector',
-      url: 'pmtiles:///tiles/tiles.pmtiles',
-    },
-  },
-  layers: [
-    {
-      id: 'background',
-      type: 'background',
-      paint: {
-        'background-color': '#d4d0c8',
-      },
-    },
-  ],
-}
+const MAP_STYLE = '/style.json'
 
 const DEFAULT_CENTER: [number, number] = [0, 51.5]
 const DEFAULT_ZOOM = 5

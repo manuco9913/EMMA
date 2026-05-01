@@ -10,5 +10,11 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
   },
 })
