@@ -15,6 +15,11 @@ node_modules/
 dist/
 .vite/
 
+# Offline map assets (large files, not committed)
+backend/static/tiles/*.pmtiles
+backend/static/fonts/*
+!backend/static/fonts/.gitkeep
+
 # Editor
 .DS_Store
 *.swp

@@ -1,31 +1,23 @@
 import { useCallback } from "react";
 import Map, { Marker, Source, Layer } from "react-map-gl/maplibre";
 import type { MapMouseEvent } from "react-map-gl/maplibre";
+import { layers as pmLayers } from "protomaps-themes-base";
 import { useSimStore } from "../store";
 import HeatmapLayer from "../heatmap/HeatmapLayer";
 import { useSliceFetcher } from "../heatmap/useSliceFetcher";
 import { circleGeoJSON, entityColor } from "./circleHelpers";
 
-// OSM raster style for the prototype (no PMTiles needed)
 const MAP_STYLE = {
   version: 8 as const,
+  glyphs: "/api/static/fonts/{fontstack}/{range}.pbf",
   sources: {
-    "osm-tiles": {
-      type: "raster" as const,
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
-      maxzoom: 19,
+    protomaps: {
+      type: "vector" as const,
+      url: "pmtiles:///api/static/tiles/region.pmtiles",
+      attribution: "© <a href='https://openstreetmap.org'>OpenStreetMap</a>",
     },
   },
-  layers: [
-    {
-      id: "osm-layer",
-      type: "raster" as const,
-      source: "osm-tiles",
-      paint: { "raster-opacity": 0.85 },
-    },
-  ],
+  layers: pmLayers("protomaps", "light", "en"),
 };
 
 export default function MapView() {

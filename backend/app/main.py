@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db.database import create_pool, close_pool, get_pool
@@ -66,3 +67,8 @@ app.include_router(slices.router)
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+_STATIC_DIR = Path(__file__).parent.parent / "static"
+_STATIC_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/api/static", StaticFiles(directory=_STATIC_DIR), name="static")
