@@ -40,11 +40,21 @@ export function MapComponent() {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
+    const origin = window.location.origin
     mapRef.current = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE,
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
+      transformStyle: (_prev, style) => ({
+        ...style,
+        sprite: typeof style.sprite === 'string' && style.sprite.startsWith('/')
+          ? origin + style.sprite
+          : style.sprite,
+        glyphs: typeof style.glyphs === 'string' && style.glyphs.startsWith('/')
+          ? origin + style.glyphs
+          : style.glyphs,
+      }),
     })
 
     mapRef.current.addControl(new maplibregl.NavigationControl())
