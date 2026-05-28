@@ -20,9 +20,9 @@ CONTRACTS_DIR = Path(__file__).parent.parent / "contracts"
 
 @app.get("/api/schema/scenario")
 def get_scenario_schema() -> dict:
-    return json.loads((CONTRACTS_DIR / "scenario.schema.json").read_text())
+    return json.loads((CONTRACTS_DIR / "scenario.schema.json").read_text(encoding="utf-8"))
 
 
 @app.get("/api/schema/entity")
 def get_entity_schema() -> dict:
-    return json.loads((CONTRACTS_DIR / "entity.schema.json").read_text())
+    return json.loads((CONTRACTS_DIR / "entity.schema.json").read_text(encoding="utf-8"))
